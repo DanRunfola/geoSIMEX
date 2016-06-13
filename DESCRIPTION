@@ -1,0 +1,11 @@
+Package: geoSIMEX
+Type: Package
+Version: 1
+Date: 2016-06-20
+Depends:
+    parallel
+Title: Geographic SIMEX
+Author: Rob Marty <ramarty@email.wm.edu>
+    Dan Runfola <dan@danrunfola.com >
+Maintainer: Rob Marty <ramarty@email.wm.edu>
+RoxygenNote: 5.0.1
