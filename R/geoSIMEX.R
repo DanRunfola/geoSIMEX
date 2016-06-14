@@ -224,10 +224,16 @@ geoSIMEX_est <- function(model,
   coef.se <- cbind(coef,se)
   df = model$df
   
+  # Values so will work with stargazer
+  # https://github.com/cran/stargazer/blob/master/R/stargazer-internal.R
+  # NOTE: Fix so will reflect geoSIMEX coefficients and not naive coefficients?
+  residuals = model$residuals 
+
   return(list(coefficients=coef.geoSIMEX,
               StdErr=se.geoSIMEX,
               coef.se = coef.se,
               df = df,
+              residuals = residuals,
               naive.model = model,
               lambda_naive = lambda_naive,
               simulations = iterations,
@@ -324,7 +330,7 @@ print.summary.geoSIMEX <- function(x, ...){
   printCoefmat(x$coefficients, P.value=TRUE, has.Pvalue=TRUE)
 }
 
-plot.geoSIMEX <- function(x, variable, confInt = 95){
+plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=FALSE, includeTitle=FALSE){
       
   # NOTE: Can make things like "all simulations", "confidence bands", "% interval"
   # all parameters / options.
@@ -351,17 +357,25 @@ plot.geoSIMEX <- function(x, variable, confInt = 95){
   # All Variable Values to Define Min / Max ylim of Plot
   var.vales.all <- c(x$valuesMean[,variable], x$values[,variable], x$coefficients[,variable], CI.geoSIMEX$value[1], CI.geoSIMEX$value[2], CI.naive$value[1], CI.naive$value[2])
   
+  title = ""
+  
+  if(includeTitle){
+    title = paste("geoSIMEX Plot of ",variable, sep="")
+  }
+  
   # Plot Mean Lambda Values
   plot(x$valuesMean$lambda, x$valuesMean[,variable],
     xlab = expression((lambda)),
-    ylab = variable,
-    main = paste("geoSIMEX Plot of ",variable, sep=""),
+    ylab = paste(variable, " coefficient", sep=""),
+    main = title,
     xlim = c(0,1),
     ylim = c(min(var.vales.all), max(var.vales.all)),
     pch  = 16)
   
-  points(x$values$lambda, x$values[,variable],
-         pch=".")
+  if(allSimulations){
+    points(x$values$lambda, x$values[,variable],
+           pch=".")
+  }
    
   points(0,x$coefficients[,variable],
          pch=1)
