@@ -1,6 +1,8 @@
 ##### SECTION 1: GEOSIMEX SIMULATION FUNCTION #####
-setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX")
-roxygen2::roxygenise()
+#setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX")
+#roxygen2::roxygenise()
+
+library(parallel)
 
 #' @title Geographic SIMEX
 #' 
@@ -42,7 +44,9 @@ roxygen2::roxygenise()
 #' 
 #' @details The values contained within roi.pc1.name and aid.pc1.centroid.name variables should be the same.
 #' 
-#' @note The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website].
+#' @note The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website]. 
+#' 
+#' Just like the lm() and glm() packages, geoSIMEX() is equipped to work with stargazer.
 #' 
 #' @references Cook, J.R. and Stefanski, L.A. (1994) Simulation-extrapolation estimation in parametric measurement error models. Journal of American Statistical Association, 89, 1314 – 1328
 #' 
@@ -87,26 +91,27 @@ roxygen2::roxygenise()
 #'                         aid.amount = "disbursement")
 #' 
 #' summarize(lm_geoSIMEX)
-#' geoSIMEX_plot(lm_geoSIMEX, variable="Expected.Aid")
-geoSIMEX <- function(model, 
+#' geoSIMEX_plot(lm_geoSIMEX, variable="Expected.Aid") 
+
+geoSIMEX_est <- function(model, 
                      geoSIMEXvariable, 
                      roiData, 
                      aidData, 
                      aid.amount,
-                     iterations=500, 
-                     bins=4, 
-                     fitting.method = "quadratic", 
-                     roi.area="area",  
-                     roi.pc1.name="pc1.id", 
-                     roi.pc2.name="pc2.id", 
-                     roi.pc3.name="pc3.id", 
-                     roi.pc4.name="pc4.id", 
-                     roi.pc5.name="pc5.id", 
-                     roi.pc6.name="pc6.id",  
-                     aid.pc1.centroid.name="centroid.pc1.id", 
-                     aid.precision.code="precision.code",
-                     parallel=TRUE, 
-                     mc.cores=2){
+                     iterations, 
+                     bins, 
+                     fitting.method, 
+                     roi.area,  
+                     roi.pc1.name, 
+                     roi.pc2.name, 
+                     roi.pc3.name, 
+                     roi.pc4.name, 
+                     roi.pc5.name, 
+                     roi.pc6.name,  
+                     aid.pc1.centroid.name, 
+                     aid.precision.code,
+                     parallel, 
+                     mc.cores){
     
   ##### Creating Variables
   # Creating probability variable from area
@@ -130,7 +135,7 @@ geoSIMEX <- function(model,
   ##### Simulating Data with Additional Error and Putting in One Dataframe #####
   prob.increase.list <- runif(iterations,0,1)
   
-  geoSimulateError.results <- lapply(prob.increase.list, geoSimulateError, 
+  geoSimulateError.results <- mclapply(prob.increase.list, geoSimulateError, 
                                      aidData=aidData, 
                                      roiData=roiData, 
                                      probAidAssume=probAid_area, 
@@ -147,7 +152,8 @@ geoSIMEX <- function(model,
                                      aid.pc1.centroid.name=aid.pc1.centroid.name,
                                      aid.amount=aid.amount,
                                      model=model,
-                                     geoSIMEXvariable=geoSIMEXvariable)
+                                     geoSIMEXvariable=geoSIMEXvariable,
+                                     mc.cores=2)
   
   geoSimulateError.results.df <- matrix(NA, ncol=ncol(geoSimulateError.results[[1]]),nrow=0)
   geoSimulateError.results.df <- as.data.frame(geoSimulateError.results.df)
@@ -197,10 +203,11 @@ geoSIMEX <- function(model,
   numberBootIter <- nrow(geoSimulateError.results.df)
   
   geoSimulateError.results.df$lambda_sq <- geoSimulateError.results.df$lambda^2
-  bootIter.list <- lapply(seq(1:numberBootIter), bootIter, 
+  bootIter.list <- mclapply(seq(1:numberBootIter), bootIter, 
                           geoSimulateError.results.df=geoSimulateError.results.df, 
                           bins=bins, 
-                          numFromBin=1)
+                          numFromBin=1,
+                          mc.cores=2)
   
   boot.coefs.matrix <- as.data.frame(matrix(NA, nrow=0, ncol=ncol(bootIter.list[[1]])))
   for(i in 1:length(bootIter.list)){
@@ -215,11 +222,175 @@ geoSIMEX <- function(model,
   se <- as.data.frame(se.geoSIMEX)
   names(se) <- "Std. Errors"
   coef.se <- cbind(coef,se)
+  df = model$df
   
-  return(list(coefficients=coef.se,
+  return(list(coefficients=coef.geoSIMEX,
+              StdErr=se.geoSIMEX,
+              coef.se = coef.se,
+              df = df,
+              naive.model = model,
+              lambda_naive = lambda_naive,
+              simulations = iterations,
+              geoSIMEXvariable = geoSIMEXvariable,
               values=geoSimulateError.results.df,
               valuesMean=extrapolatedMean.df))
 }
+
+geoSIMEX <- function(x, ...) UseMethod("geoSIMEX")
+
+geoSIMEX.default <- function(model, 
+                         geoSIMEXvariable, 
+                         roiData, 
+                         aidData, 
+                         aid.amount,
+                         iterations=500, 
+                         bins=4, 
+                         fitting.method = "quadratic", 
+                         roi.area="area",  
+                         roi.pc1.name="pc1.id", 
+                         roi.pc2.name="pc2.id", 
+                         roi.pc3.name="pc3.id", 
+                         roi.pc4.name="pc4.id", 
+                         roi.pc5.name="pc5.id", 
+                         roi.pc6.name="pc6.id",  
+                         aid.pc1.centroid.name="centroid.pc1.id", 
+                         aid.precision.code="precision.code",
+                         parallel=TRUE, 
+                         mc.cores=2){
+ 
+  est <- geoSIMEX_est(model=model, 
+                      geoSIMEXvariable=geoSIMEXvariable, 
+                      roiData=roiData, 
+                      aidData=aidData, 
+                      aid.amount=aid.amount,
+                      iterations=iterations, 
+                      bins=bins, 
+                      fitting.method = fitting.method, 
+                      roi.area=roi.area,  
+                      roi.pc1.name=roi.pc1.name, 
+                      roi.pc2.name=roi.pc2.name, 
+                      roi.pc3.name=roi.pc3.name, 
+                      roi.pc4.name=roi.pc4.name, 
+                      roi.pc5.name=roi.pc5.name, 
+                      roi.pc6.name=roi.pc6.name,  
+                      aid.pc1.centroid.name=aid.pc1.centroid.name, 
+                      aid.precision.code=aid.precision.code,
+                      parallel=parallel, 
+                      mc.cores=mc.cores)
+  
+  est$call <- model$call
+  
+  class(est) <- "geoSIMEX"
+  est
+}
+
+print.geoSIMEX <- function(x, ...){
+  cat("Naive Model:\n")
+  print(x$call)
+  cat("\ngeoSIMEX-Variables: ", x$geoSIMEXvariable, sep="")
+  cat("\nNumer of Simulations: ", x$simulations, sep= "")
+  cat("\n\nCoefficients:\n")
+  print(x$coefficients, row.names=FALSE)  
+}
+
+summary.geoSIMEX <- function(object, ...){
+  
+  Coef <- as.numeric(object$coefficients)
+  StdErr <- as.numeric(object$StdErr)
+  tval <- Coef / StdErr
+  
+  TAB <- cbind(Estimate = Coef,
+               StdErr = StdErr,
+               t.value = tval,
+               p.value = 2*pt(-abs(tval), df=object$df))
+  
+  TAB <- as.data.frame(TAB)
+  row.names(TAB) <- names(object$coefficients)
+  names(TAB) <- c("Estimate","Std. Error","t.value","p.value")
+  
+  res <- list(call=object$call,
+              coefficients=TAB)
+  
+  class(res) <- "summary.geoSIMEX"
+  res
+}
+
+print.summary.geoSIMEX <- function(x, ...){
+  
+  cat("Call:\n")
+  print(x$call)
+  cat("\n")
+  
+  printCoefmat(x$coefficients, P.value=TRUE, has.Pvalue=TRUE)
+}
+
+plot.geoSIMEX <- function(x, variable, confInt = 95){
+      
+  # NOTE: Can make things like "all simulations", "confidence bands", "% interval"
+  # all parameters / options.
+  
+  # Calculating 95\% Confidence Bands
+  t_critical <- qt((1-confInt/100), x$df)
+  
+  coef.geoSIMEX <- x$coefficients[,variable]
+  se.geoSIMEX <- as.data.frame(t(x$StdErr))[,variable]
+  CI.geoSIMEX <- as.data.frame(matrix(NA, nrow=2, ncol=2))
+  names(CI.geoSIMEX) <- c("value", "lambda")
+  CI.geoSIMEX$lambda <- 0
+  CI.geoSIMEX$value[1] <- coef.geoSIMEX - t_critical*se.geoSIMEX
+  CI.geoSIMEX$value[2] <- coef.geoSIMEX + t_critical*se.geoSIMEX
+   
+  coef.naive <- as.data.frame(t(x$naive.model$coefficients))[,variable]
+  se.naive <- as.data.frame(summary(x$naive.model)$coefficients)[variable,2]
+  CI.naive <- as.data.frame(matrix(NA, nrow=2, ncol=2))
+  names(CI.naive) <- c("value", "lambda")
+  CI.naive$lambda <- x$lambda_naive
+  CI.naive$value[1] <- coef.naive - t_critical*se.naive
+  CI.naive$value[2] <- coef.naive + t_critical*se.naive
+  
+  # All Variable Values to Define Min / Max ylim of Plot
+  var.vales.all <- c(x$valuesMean[,variable], x$values[,variable], x$coefficients[,variable], CI.geoSIMEX$value[1], CI.geoSIMEX$value[2], CI.naive$value[1], CI.naive$value[2])
+  
+  # Plot Mean Lambda Values
+  plot(x$valuesMean$lambda, x$valuesMean[,variable],
+    xlab = expression((lambda)),
+    ylab = variable,
+    main = paste("geoSIMEX Plot of ",variable, sep=""),
+    xlim = c(0,1),
+    ylim = c(min(var.vales.all), max(var.vales.all)),
+    pch  = 16)
+  
+  points(x$values$lambda, x$values[,variable],
+         pch=".")
+   
+  points(0,x$coefficients[,variable],
+         pch=1)
+    
+  # Prepping Data for Lines
+  var <- x$valuesMean[,variable]
+  lambda <- x$valuesMean$lambda
+  fit <- lm(var ~ lambda + I(lambda^2))
+  
+  newdat_sim = data.frame(lambda = seq(min(lambda), max(lambda), length.out = 100))
+  newdat_sim$pred = predict(fit, newdata = newdat_sim)
+  
+  newdat_extrp = data.frame(lambda = seq(0, min(lambda), length.out = 100))
+  newdat_extrp$pred = predict(fit, newdata = newdat_extrp)
+  
+  # Plotting Lines
+  with(newdat_sim, lines(x = lambda, y = pred))
+  with(newdat_extrp, lines(x = lambda, y = pred, lty = 2))
+  
+  # Plot Naive Model
+  points(x$lambda_naive, coef.naive,
+         pch="*")
+  
+  # Plotting Confidence Intervals
+  lines(x=CI.geoSIMEX$lambda, y=CI.geoSIMEX$value, lty=5)
+  lines(x=CI.naive$lambda, y=CI.naive$value, lty=1)
+    
+}
+
 
 ##### SECTION 2: FUNCTIONS TO BE INCLUDED IN PACKAGE #####
 #' Calculates expected value of aid for each ROI
@@ -485,18 +656,7 @@ bootIter <- function(i, geoSimulateError.results.df, bins, numFromBin){
   return(coefs.geoSIMEX.boot)
 }
 
-##### SECTION 4: DEFINING FUNCTIONS THAT ACT ON geoSIMEX PACKAGE #####
-summarize <- function(glm_geoSIMEX){
-  return(glm_geoSIMEX$coefficients)
-}
 
-geoSIMEX_plot <- function(glm_geoSIMEX, variable){
-  return(plot(glm_geoSIMEX$valuesMean$lambda, glm_geoSIMEX$valuesMean[,variable],
-       xlab="lambda",
-       ylab=variable,
-       main=paste("geoSIMEX Plot of ",variable, sep=""),
-       pch=20))
-}
 
 
 
