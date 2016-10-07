@@ -35,6 +35,10 @@ calc_lambda(aidData, roiData, roi.area="area", aid.precision.code="precision.cod
 \note{
 The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website].
 }
+\examples{
+lambda.naive <- calc_lambda(aidData=aidData.sub@data, roiData=roiData)
+
+}
 \author{
 AidData
 }

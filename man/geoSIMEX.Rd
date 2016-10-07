@@ -14,6 +14,8 @@ parallel=TRUE, mc.cores=2)
 \arguments{
 \item{model}{the naive model}
 
+\item{SIMEXvariable}{character containing the name of the variable with spatial uncertainty}
+
 \item{roiData}{name of dataframe of ROI data}
 
 \item{aidData}{name of dataframe of aid project data}
@@ -30,13 +32,13 @@ parallel=TRUE, mc.cores=2)
 
 \item{roi.pc1.name}{character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc1.id" is the default name in datasets produced by AidData's data extraction tool}
 
-\item{roi.pc2.name}{character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc2.id" is the default name in datasets produced by AidData's data extraction tool}
+\item{roi.pc2.name}{character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 2 spatial area that each ROI falls within. "pc2.id" is the default name in datasets produced by AidData's data extraction tool}
 
-\item{roi.pc3.name}{character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc3.id" is the default name in datasets produced by AidData's data extraction tool}
+\item{roi.pc3.name}{character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 3 spatial area that each ROI falls within. "pc3.id" is the default name in datasets produced by AidData's data extraction tool}
 
-\item{roi.pc4.name}{character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc4.id" is the default name in datasets produced by AidData's data extraction tool}
+\item{roi.pc4.name}{character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 4 spatial area that each ROI falls within. "pc4.id" is the default name in datasets produced by AidData's data extraction tool}
 
-\item{roi.pc6.name}{character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc6.id" is the default name in datasets produced by AidData's data extraction tool}
+\item{roi.pc6.name}{character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 6 and 8 spatial area that each ROI falls within. "pc6.id" is the default name in datasets produced by AidData's data extraction tool}
 
 \item{aid.pc1.centroid.name}{character containing the name of the variable in the aidData dataset which contains names or IDs of a precision code 1 spatial area that the aid project falls within. "centroid.pc1.id" is the default name in datasets produced by AidData's data extraction tool}
 
@@ -45,8 +47,6 @@ parallel=TRUE, mc.cores=2)
 \item{parallel}{parallelize iterations}
 
 \item{mc.cores}{number of cores to use for parallelization}
-
-\item{SIMEXvariable}{character containing the name of the variable with spatial uncertainty}
 }
 \description{
 \code{geoSIMEX} Implementation of the geoSIMEX algorithm for models 
@@ -57,7 +57,9 @@ AidData's data extraction tool.
 The values contained within roi.pc1.name and aid.pc1.centroid.name variables should be the same.
 }
 \note{
-The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website].
+The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website]. 
+
+Just like the lm() and glm() packages, geoSIMEX() is equipped to work with stargazer.
 }
 \examples{
 set.seed(42)
@@ -99,8 +101,8 @@ lm_geoSIMEX <- geoSIMEX(model = lm_naive,
                         aidData = aidData, 
                         aid.amount = "disbursement")
 
-summarize(lm_geoSIMEX)
-geoSIMEX_plot(lm_geoSIMEX, variable="Expected.Aid")
+summary(lm_geoSIMEX)
+plot(lm_geoSIMEX, variable="Expected.Aid") 
 }
 \author{
 AidData
