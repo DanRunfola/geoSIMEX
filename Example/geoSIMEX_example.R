@@ -144,7 +144,7 @@ uga.adm2.df$expected_aid <- expected_aid_ROI(aidData=uga.aiddata.reduced,
                                              roi.pc6.name="NAME_0.id", 
                                              aid.pc1.centroid.name="NAME_1.id")
 
-naive_model <- lm(ncc4_2010e ~ expected_aid, data=uga.adm2.df)
+naive_model <- lm(ncc4_2010e ~ expected_aid + gpw3_2000e, data=uga.adm2.df)
 
 geoSIMEX_model <- geoSIMEX(model = naive_model, 
                            geoSIMEXvariable = "expected_aid", 
@@ -171,6 +171,86 @@ summary(naive_model)
 summary(geoSIMEX_model)
 plot(geoSIMEX_model, variable="expected_aid")
 
+# --- --- --- --- --- --- --- --- --- --- --- --- ---#
+##### Analysis at ADM2 Level - Interaction Term #####
+# --- --- --- --- --- --- --- --- --- --- --- --- ---#
+
+naive_model <- lm(ncc4_2010e ~ expected_aid + gpw3_2000e + expected_aid:gpw3_2000e, data=uga.adm2.df)
+
+geoSIMEX_model <- geoSIMEX(model = naive_model, 
+                           geoSIMEXvariable = "expected_aid", 
+                           roiData = uga.adm2.df, 
+                           aidData = uga.aiddata.reduced, 
+                           aid.amount = "total_commitments",
+                           iterations = 100, 
+                           bins = 4, 
+                           roi.area = "area", 
+                           roi.prob.aid = "area", 
+                           roi.pc1.name="NAME_2.id", 
+                           roi.pc2.name="NAME_2.id", 
+                           roi.pc3.name="NAME_1.id", 
+                           roi.pc4.name="NAME_1.id", 
+                           roi.pc5.name="NAME_1.id", 
+                           roi.pc6.name="NAME_0.id", 
+                           aid.pc1.centroid.name="NAME_0.id", 
+                           aid.precision.code="precision_code",
+                           binary=FALSE,
+                           sim_pc1=TRUE)
+
+geoSIMEX_model$lambda
+summary(naive_model)
+summary(geoSIMEX_model)
+plot(geoSIMEX_model, variable="expected_aid")
+plot(geoSIMEX_model, variable="expected_aid:gpw3_2000e")
+
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- #
+##### Analysis at ADM2 Level - Aid as Binary Term #####
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- #
+
+# To treat aid as a binary variable (i.e., whether an ROI recievied aid or note),
+# we use the probability that an ROI recieved aid instead of using expected
+# dollars of aid.
+
+##### Calculating Expected Aid in ROI
+uga.adm2.df$prob_aid <- prob_aid_ROI(aidData=uga.aiddata.reduced, 
+                                             roiData=uga.adm2.df, 
+                                             probAidAssume=uga.adm2.df$area, 
+                                             dollar_set=uga.aiddata.reduced$total_commitments, 
+                                             aid.precision.code="precision_code", 
+                                             roi.pc1.name="NAME_2.id", 
+                                             roi.pc2.name="NAME_2.id", 
+                                             roi.pc3.name="NAME_1.id", 
+                                             roi.pc4.name="NAME_1.id", 
+                                             roi.pc5.name="NAME_1.id", 
+                                             roi.pc6.name="NAME_0.id", 
+                                             aid.pc1.centroid.name="NAME_1.id")
+
+naive_model <- lm(ncc4_2010e ~ prob_aid + gpw3_2000e, data=uga.adm2.df)
+
+geoSIMEX_model <- geoSIMEX(model = naive_model, 
+                           geoSIMEXvariable = "prob_aid", 
+                           roiData = uga.adm2.df, 
+                           aidData = uga.aiddata.reduced, 
+                           aid.amount = "total_commitments",
+                           iterations = 100, 
+                           bins = 4, 
+                           roi.area = "area", 
+                           roi.prob.aid = "area", 
+                           roi.pc1.name="NAME_2.id", 
+                           roi.pc2.name="NAME_2.id", 
+                           roi.pc3.name="NAME_1.id", 
+                           roi.pc4.name="NAME_1.id", 
+                           roi.pc5.name="NAME_1.id", 
+                           roi.pc6.name="NAME_0.id", 
+                           aid.pc1.centroid.name="NAME_0.id", 
+                           aid.precision.code="precision_code",
+                           binary=TRUE,
+                           sim_pc1=TRUE)
+
+geoSIMEX_model$lambda
+summary(naive_model)
+summary(geoSIMEX_model)
+plot(geoSIMEX_model, variable="prob_aid")
 
 # --- --- --- --- --- --- --- --- --- --- #
 ##### Analysis at ADM3 Level #####
@@ -204,7 +284,7 @@ uga.adm3.df$expected_aid <- expected_aid_ROI(aidData=uga.aiddata.reduced,
                                           roi.pc6.name="NAME_0.id", 
                                           aid.pc1.centroid.name="NAME_1.id")
 
-naive_model <- lm(ncc4_2010e ~ expected_aid, data=uga.adm3.df)
+naive_model <- lm(ncc4_2010e ~ expected_aid + gpw3_2000e, data=uga.adm3.df)
 
 geoSIMEX_model <- geoSIMEX(model = naive_model, 
                            geoSIMEXvariable = "expected_aid", 
