@@ -117,6 +117,19 @@ uga.aiddata.reduced <- uga.aiddata[(uga.aiddata$transactions_end_year >= 2000) &
 # General budget support aid
 uga.aiddata.reduced <- uga.aiddata.reduced[uga.aiddata.reduced$ad_sector_names %in% c("General budget support"),]
 
+##### Calculating Spatial Uncertainty of Dataset
+(lambda <- calc_lambda(uga.aiddata.reduced, 
+                       uga.adm3.df, 
+                       roi.area="area", 
+                       aid.precision.code="precision_code", 
+                       roi.pc1.name="NAME_3_unique.id", 
+                       roi.pc2.name="NAME_2.id", 
+                       roi.pc3.name="NAME_1.id", 
+                       roi.pc4.name="NAME_1.id", 
+                       roi.pc5.name="NAME_1.id", 
+                       roi.pc6.name="NAME_0.id", 
+                       aid.pc1.centroid.name="NAME_1.id"))
+
 ##### Calculating Expected Aid in ROI
 uga.adm2.df$expected_aid <- expected_aid_ROI(aidData=uga.aiddata.reduced, 
                                              roiData=uga.adm2.df, 
@@ -162,6 +175,20 @@ plot(geoSIMEX_model, variable="expected_aid")
 # --- --- --- --- --- --- --- --- --- --- #
 ##### Analysis at ADM3 Level #####
 # --- --- --- --- --- --- --- --- --- --- #
+
+##### Calculating Spatial Uncertainty of Dataset
+(lambda <- calc_lambda(uga.aiddata.reduced, 
+            uga.adm3.df, 
+            roi.area="area", 
+            aid.precision.code="precision_code", 
+            roi.pc1.name="NAME_3_unique.id", 
+            roi.pc2.name="NAME_2.id", 
+            roi.pc3.name="NAME_1.id", 
+            roi.pc4.name="NAME_1.id", 
+            roi.pc5.name="NAME_1.id", 
+            roi.pc6.name="NAME_0.id", 
+            aid.pc1.centroid.name="NAME_1.id"))
+
 
 ##### Calculating Expected Aid in ROI
 uga.adm3.df$expected_aid <- expected_aid_ROI(aidData=uga.aiddata.reduced, 
