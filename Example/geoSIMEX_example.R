@@ -30,7 +30,7 @@ proj4string(uga.aiddata) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84
   # NOTE: Can typically use getData to get ADM info; however, issue with server where this comes 
   # from... so might be resolved later? Consequently, I'm importing from my local drive. And
   # exporting the resulting dataset to github.
-if(FALSE){
+if(TRUE){
   setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/UGA_adm_shp")
   uga.3 <- readOGR(dsn = ".", layer = "UGA_adm3")
   
@@ -50,7 +50,7 @@ if(FALSE){
 
 uga.3$area <- area(uga.3)
 
-uga.adm3.df_a <- merge(uga.adm3.df, uga.3, by=c("NAME_0", "NAME_1", "NAME_2", "NAME_3"))
+uga.adm3.df <- merge(uga.adm3.df, uga.3, by=c("NAME_0", "NAME_1", "NAME_2", "NAME_3"))
 
 write.csv(uga.adm3.df, "~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/merge_uga_adm3.csv")
 
