@@ -1,5 +1,5 @@
 ##### SECTION 1: GEOSIMEX SIMULATION FUNCTION #####
-#roxygen2::roxygenise()
+roxygen2::roxygenise()
 
 library(parallel)
 
@@ -868,7 +868,7 @@ plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=FALSE, inclu
   # all parameters / options.
   
   if(name_variable == ""){
-    variable_name = variable_name
+    variable_name =  variable
   } else {
     variable_name = name_variable
   }

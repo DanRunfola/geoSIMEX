@@ -9,10 +9,13 @@
 library(raster)
 library(sp)
 library(rgdal)
+library(doBy)
 
 source("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/R/geoSIMEX.R")
 uga.adm3.df <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/merge_uga_adm3.csv")
 uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv")
+
+source("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/man/geoSIMEX.Rd")
 
 # --- --- --- --- --- --- --- --- --- --- #
 ##### Prepping Data for Analysis #####
@@ -47,59 +50,159 @@ if(TRUE){
   uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/uga_aiddata_gadm.csv")
 }
 
-
-uga.3$area <- area(uga.3)
-
-uga.adm3.df <- merge(uga.adm3.df, uga.3, by=c("NAME_0", "NAME_1", "NAME_2", "NAME_3"))
-
-write.csv(uga.adm3.df, "~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/merge_uga_adm3.csv")
-
 # --- --- --- --- --- --- --- --- --- --- #
 ##### Checks on Data #####
 # --- --- --- --- --- --- --- --- --- --- #
 
-# Making sure all ADM names in aiddata dataset are in ROI-level dataset
+##### ADM Names have to be unique (e.g., subcounties can't have same name)
+uga.aiddata$NAME_0 <- as.character(uga.aiddata$NAME_0)
+uga.aiddata$NAME_1 <- as.character(uga.aiddata$NAME_1)
+uga.aiddata$NAME_2 <- as.character(uga.aiddata$NAME_2)
+uga.aiddata$NAME_3 <- as.character(uga.aiddata$NAME_3)
+
+uga.adm3.df$NAME_0 <- as.character(uga.adm3.df$NAME_0)
+uga.adm3.df$NAME_1 <- as.character(uga.adm3.df$NAME_1)
+uga.adm3.df$NAME_2 <- as.character(uga.adm3.df$NAME_2)
+uga.adm3.df$NAME_3 <- as.character(uga.adm3.df$NAME_3)
+
+# Some ADM 3s don't have unique names
+table(as.numeric(table(uga.adm3.df$NAME_3)))
+
+# ADM 2s have unique names
+table(as.numeric(table(summaryBy(.~NAME_2, data=uga.adm3.df)$NAME_2)))
+
+# ADM 1s have unique names
+table(as.numeric(table(summaryBy(.~NAME_1, data=uga.adm3.df)$NAME_1)))
+
+# Making unique NAME_3 name
+uga.aiddata$NAME_3_unique <- paste(uga.aiddata$NAME_3, uga.aiddata$NAME_2) 
+uga.adm3.df$NAME_3_unique <- paste(uga.adm3.df$NAME_3, uga.adm3.df$NAME_2) 
+
+# Confirming NAME_3_unique have
+table(as.numeric(table(uga.adm3.df$NAME_3_unique)))
+
+##### Making sure all ADM names in aiddata dataset are in ROI-level dataset
 table(uga.aiddata$NAME_1 %in% uga.adm3.df$NAME_1)
 uga.aiddata[uga.aiddata$NAME_1 %in% uga.adm3.df$NAME_1 == FALSE,]
 uga.aiddata <- uga.aiddata[!is.na(uga.aiddata$NAME_1),]
 table(uga.aiddata$NAME_1 %in% uga.adm3.df$NAME_1)
 
+##### Converting ADM NAMES to IDs [change to work with strings!]
+  # Basically, make what's happening here happen interally early on in geoSIMEX
+uga.adm3.df$NAME_3_unique.id <- as.numeric(as.factor(uga.adm3.df$NAME_3_unique))
+uga.adm3.df$NAME_2.id <- as.numeric(as.factor(uga.adm3.df$NAME_2))
+uga.adm3.df$NAME_1.id <- as.numeric(as.factor(uga.adm3.df$NAME_1))
+uga.adm3.df$NAME_0.id <- as.numeric(as.factor(uga.adm3.df$NAME_0))
+
+uga.adm3.df_IDS <- subset(uga.adm3.df, select=c(NAME_0, NAME_1, NAME_2, NAME_3_unique,
+                                                NAME_0.id, NAME_1.id, NAME_2.id, NAME_3_unique.id))
+
+uga.aiddata <- merge(uga.aiddata, uga.adm3.df_IDS, by=c("NAME_0", "NAME_1", "NAME_2", "NAME_3_unique"))
+
 # --- --- --- --- --- --- --- --- --- --- #
-##### Analysis #####
+##### Analysis at ADM2 Level #####
+# --- --- --- --- --- --- --- --- --- --- #
+
+# Analysis at ADM3 levels takes a while to run. So, here doing analysis at ADM2 level
+# See next section for an example of ADM3 analysis, though.
+
+uga.adm2.df <- summaryBy(. ~ NAME_2, data=uga.adm3.df, keep.names=TRUE)
+
+##### Look at subset of AidData
+
+# Projects ended between 2000 and 2010
+uga.aiddata.reduced <- uga.aiddata[(uga.aiddata$transactions_end_year >= 2000) &
+                                     (uga.aiddata$transactions_end_year <= 2010),]
+
+# General budget support aid
+uga.aiddata.reduced <- uga.aiddata.reduced[uga.aiddata.reduced$ad_sector_names %in% c("General budget support"),]
+
+##### Calculating Expected Aid in ROI
+uga.adm2.df$expected_aid <- expected_aid_ROI(aidData=uga.aiddata.reduced, 
+                                             roiData=uga.adm2.df, 
+                                             probAidAssume=uga.adm2.df$area, 
+                                             dollar_set=uga.aiddata.reduced$total_commitments, 
+                                             aid.precision.code="precision_code", 
+                                             roi.pc1.name="NAME_2.id", 
+                                             roi.pc2.name="NAME_2.id", 
+                                             roi.pc3.name="NAME_1.id", 
+                                             roi.pc4.name="NAME_1.id", 
+                                             roi.pc5.name="NAME_1.id", 
+                                             roi.pc6.name="NAME_0.id", 
+                                             aid.pc1.centroid.name="NAME_1.id")
+
+naive_model <- lm(ncc4_2010e ~ expected_aid, data=uga.adm2.df)
+
+geoSIMEX_model <- geoSIMEX(model = naive_model, 
+                           geoSIMEXvariable = "expected_aid", 
+                           roiData = uga.adm2.df, 
+                           aidData = uga.aiddata.reduced, 
+                           aid.amount = "total_commitments",
+                           iterations = 100, 
+                           bins = 4, 
+                           roi.area = "area", 
+                           roi.prob.aid = "area", 
+                           roi.pc1.name="NAME_2.id", 
+                           roi.pc2.name="NAME_2.id", 
+                           roi.pc3.name="NAME_1.id", 
+                           roi.pc4.name="NAME_1.id", 
+                           roi.pc5.name="NAME_1.id", 
+                           roi.pc6.name="NAME_0.id", 
+                           aid.pc1.centroid.name="NAME_0.id", 
+                           aid.precision.code="precision_code",
+                           binary=FALSE,
+                           sim_pc1=TRUE)
+
+geoSIMEX_model$lambda
+summary(naive_model)
+summary(geoSIMEX_model)
+plot(geoSIMEX_model, variable="expected_aid")
+
+
+# --- --- --- --- --- --- --- --- --- --- #
+##### Analysis at ADM3 Level #####
 # --- --- --- --- --- --- --- --- --- --- #
 
 ##### Calculating Expected Aid in ROI
-subcountyData$trueAid <- expected_aid_ROI(aidData=uga.aiddata, 
+uga.adm3.df$expected_aid <- expected_aid_ROI(aidData=uga.aiddata.reduced, 
                                           roiData=uga.adm3.df, 
-                                          probAidAssume=probAid_equal, 
-                                          dollar_set=aidData$aid, 
-                                          aid.precision.code="PC", 
-                                          roi.pc1.name="subcounty", 
-                                          roi.pc2.name="county", 
-                                          roi.pc3.name="district", 
-                                          roi.pc4.name="region", 
-                                          roi.pc5.name="region", 
-                                          roi.pc6.name="country", 
-                                          aid.pc1.centroid.name="trueSubcounty")
+                                          probAidAssume=uga.adm3.df$area, 
+                                          dollar_set=uga.aiddata.reduced$total_commitments, 
+                                          aid.precision.code="precision_code", 
+                                          roi.pc1.name="NAME_3_unique.id", 
+                                          roi.pc2.name="NAME_2.id", 
+                                          roi.pc3.name="NAME_1.id", 
+                                          roi.pc4.name="NAME_1.id", 
+                                          roi.pc5.name="NAME_1.id", 
+                                          roi.pc6.name="NAME_0.id", 
+                                          aid.pc1.centroid.name="NAME_1.id")
+
+naive_model <- lm(ncc4_2010e ~ expected_aid, data=uga.adm3.df)
 
 geoSIMEX_model <- geoSIMEX(model = naive_model, 
-                           geoSIMEXvariable = "expectedAid", 
-                           roiData = subcountyData, 
-                           aidData = aidData, 
-                           aid.amount = "aid",
-                           iterations = simex_randProb_iterations, 
-                           bins = bins, 
-                           roi.area = "subcountyArea", 
-                           roi.prob.aid = "prob.aid.roi.use", 
-                           roi.pc1.name="subcounty", 
-                           roi.pc2.name="county", 
-                           roi.pc3.name="district", 
-                           roi.pc4.name="region", 
-                           roi.pc5.name="region", 
-                           roi.pc6.name="country",  
-                           aid.pc1.centroid.name="trueSubcounty", 
-                           aid.precision.code="PC",
+                           geoSIMEXvariable = "expected_aid", 
+                           roiData = uga.adm3.df, 
+                           aidData = uga.aiddata.reduced, 
+                           aid.amount = "total_commitments",
+                           iterations = 100, 
+                           bins = 3, 
+                           roi.area = "area", 
+                           roi.prob.aid = "area", 
+                           roi.pc1.name="NAME_3_unique.id", 
+                           roi.pc2.name="NAME_2.id", 
+                           roi.pc3.name="NAME_1.id", 
+                           roi.pc4.name="NAME_1.id", 
+                           roi.pc5.name="NAME_1.id", 
+                           roi.pc6.name="NAME_0.id", 
+                           aid.pc1.centroid.name="NAME_0.id", 
+                           aid.precision.code="precision_code",
                            binary=FALSE,
-                           sim_pc1=sim_pc1)
+                           sim_pc1=TRUE)
+
+geoSIMEX_model$lambda
+summary(naive_model)
+summary(geoSIMEX_model)
+plot(geoSIMEX_model, variable="expected_aid")
+
 
 
