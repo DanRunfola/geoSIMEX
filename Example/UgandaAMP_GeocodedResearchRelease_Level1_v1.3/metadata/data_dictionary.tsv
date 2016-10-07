@@ -1,0 +1,28 @@
+field_name	field_description
+project_id	project identifier
+project_location_id	unique project location identifier
+precision_code	the precision code of the location (see UDCP Geocoding methodology document)
+geoname_id	the geoname id retrieved from http://geonames.org
+place_name	the name of a place (from geonames)
+latitude	latitude of a location in decimal degrees
+longitude	longitude of a location in decimal degrees
+location_type_code	one of the location type codes from http://www.geonames.org/export/codes.html
+is_geocoded	flag to indicate whether a project was geocoded
+project_title	text field with project title
+start_actual_isodate	the start date of the project in iso format (YYYY-MM-DD)
+start_actual_type	the type of project start (ex. Start-actual)
+end_actual_isodate	the end date of the project in iso format (YYYY-MM-DD)
+end_actual_type	the type of project end date ( ex. End-actual)
+donors	pipe delimited list of donors (ex: Name of Donor 1 | Name of Donor 2)
+donors_iso3	pipe delimited list of donors (ex: SEN|NEP)
+sector_name_trans	the translated, pipe seperate list of AMP sectors 
+ad_sector_names	crosswalked sectors names ; crosswalked to AidData Sectors. Pipe delimited 
+ad_sector_codes	crosswalked sectors codes ; crosswalked to AidData Sectors. Pipe delimited 
+status	status of the project (ex. Completed)
+total_commitments	sum of the total commitments from the transactions
+total_disbursements	sum of the total disbursements from the transactions
+transaction_date_isodate	the date of the transaction in iso format (YYYY-MM-DD)
+transaction_year	the year of the transaction (ex. 2007)
+transaction_value_code	type of transaction (ex C=commitment, D=disbursement)
+transaction_currency	type of currency (ex. USD)
+transaction_value	amount in currency of transaction (ex. 45000.00)
