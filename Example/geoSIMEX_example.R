@@ -3,6 +3,8 @@
 # AidData, REU
 # Last Updated: 10/7/2016
 
+# I'm using R version 3.3.1 when running the below code
+
 # --- --- --- --- --- --- --- --- --- --- #
 ##### Loading Packages and Data #####
 # --- --- --- --- --- --- --- --- --- --- #
