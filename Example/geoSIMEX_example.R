@@ -17,7 +17,7 @@ source("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/R/geoSIMEX.R")
 uga.adm3.df <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/merge_uga_adm3.csv")
 uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv")
 
-source("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/man/geoSIMEX.Rd")
+#source("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/man/geoSIMEX.Rd")
 
 # --- --- --- --- --- --- --- --- --- --- #
 ##### Prepping Data for Analysis #####
@@ -35,7 +35,7 @@ proj4string(uga.aiddata) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84
   # NOTE: Can typically use getData to get ADM info; however, issue with server where this comes 
   # from... so might be resolved later? Consequently, I'm importing from my local drive. And
   # exporting the resulting dataset to github.
-if(TRUE){
+if(FALSE){
   setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/UGA_adm_shp")
   uga.3 <- readOGR(dsn = ".", layer = "UGA_adm3")
   

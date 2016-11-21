@@ -1,5 +1,5 @@
 ##### SECTION 1: GEOSIMEX SIMULATION FUNCTION #####
-roxygen2::roxygenise()
+#roxygen2::roxygenise()
 
 library(parallel)
 
@@ -387,7 +387,7 @@ print.summary.geoSIMEX <- function(x, ...){
   printCoefmat(x$coefficients, P.value=TRUE, has.Pvalue=TRUE)
 }
 
-plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=FALSE, includeTitle=TRUE, name_variable=""){
+plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=FALSE, includeTitle=TRUE, name_variable="", ylim="default"){
   
   
   #name_variable = variable
@@ -432,6 +432,10 @@ plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=FALSE, inclu
   
   
   # Plot Mean Lambda Values
+  ylim==c(NA,NA)
+  
+  if(ylim[1] == "default"){
+  
   plot(x$valuesMean$lambda, x$valuesMean[,variable],
        xlab = expression((lambda)),
        ylab = paste(variable_name, " coefficient", sep=""),
@@ -439,6 +443,16 @@ plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=FALSE, inclu
        xlim = c(0,1),
        ylim = c(min(var.vales.all), max(var.vales.all)),
        pch  = 16)
+  
+  } else{
+    plot(x$valuesMean$lambda, x$valuesMean[,variable],
+         xlab = expression((lambda)),
+         ylab = paste(variable_name, " coefficient", sep=""),
+         main = title,
+         xlim = c(0,1),
+         ylim = ylim,
+         pch  = 16)
+  }
   
   if(allSimulations){
     points(x$values$lambda, x$values[,variable],
@@ -3245,6 +3259,25 @@ realization_of_aid <- function(param_set, dollar_set){
   return(dollars_realization)
 }
 
+##### SECTION 4: SUBSETTING AID DATA #####
+
+subset.aiddata <- function(json){
+  
+  # Import dataset. Dataset names must be loaded from Rpackage and be the same that appears in JSON.
+  geo.data <- eval(parse(text=json$dataset))
+  
+  # Number of filters to subset by
+  num.filters <- length(json$request$options$filters)
+  
+  for(i in 1:num.filters){
+    
+    # Checking to make sure filter exists in dataset (if doesn't, skip). Filter name in JSON must match filter
+    if(row.names(as.matrix(json$request$options$filters[i])) %in% names(geo.data)){ 
+      geo.data <- geo.data[geo.data[row.names(as.matrix(json$request$options$filters[i]))] == as.character(json$request$options$filters[i]),]
+    }
+  }
+  return(geo.data)
+}
 
 
 
