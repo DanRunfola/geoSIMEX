@@ -18,7 +18,8 @@ source("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/R/geoSIMEX.R")
 uga.adm <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/merge_uga_adm3.csv")
 
 # Aid Project Level Data
-uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv")
+uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/
+UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv")
 
 
 ##### Calculating Expected Amount of Aid in Each ADM #####
