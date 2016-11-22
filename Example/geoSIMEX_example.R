@@ -145,6 +145,7 @@ uga.adm2.df <- summaryBy(. ~ NAME_2, data=uga.adm3.df, keep.names=TRUE)
 
 ##### Calculating Expected Aid in ROI
 #uga.aiddata.reduced$total_commitments <- log(uga.aiddata.reduced$total_commitments+1)
+uga.aiddata.reduced$total_commitments <- uga.aiddata.reduced$total_commitments / 100000000
 uga.adm2.df$expected_aid <- expected_aid_ROI(aidData=uga.aiddata.reduced, 
                                              roiData=uga.adm2.df, 
                                              probAidAssume=uga.adm2.df$area, 
@@ -171,7 +172,7 @@ geoSIMEX_model <- geoSIMEX(model = naive_model,
                            roiData = uga.adm, 
                            aidData = uga.aiddata, 
                            aid.amount = "total_commitments",
-                           iterations = 25, 
+                           iterations = 100, 
                            bins = 4, 
                            roi.area = "area", 
                            roi.prob.aid = "area", 
