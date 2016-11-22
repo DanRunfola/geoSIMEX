@@ -25,7 +25,7 @@ uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/mast
 # --- --- --- --- --- --- --- --- --- --- #
 
 # Subsetting
-uga.aiddata <- uga.aiddata[uga.aiddata$ad_sector_names == "Government and civil society, general",]
+#uga.aiddata <- uga.aiddata[uga.aiddata$ad_sector_names == "Government and civil society, general",]
 #uga.aiddata <- uga.aiddata[(uga.aiddata$transactions_end_year >= 2000) &
 #                                     (uga.aiddata$transactions_end_year <= 2010),]
 
@@ -166,13 +166,12 @@ naive_model <- lm(ncc4_2010e ~ expected_aid + gpw3_2000e, data=uga.adm)
 summary(naive_model)
 
 
-
 geoSIMEX_model <- geoSIMEX(model = naive_model, 
                            geoSIMEXvariable = "expected_aid", 
                            roiData = uga.adm, 
                            aidData = uga.aiddata, 
                            aid.amount = "total_commitments",
-                           iterations = 500, 
+                           iterations = 100, 
                            bins = 4, 
                            roi.area = "area", 
                            roi.prob.aid = "area", 
@@ -182,7 +181,7 @@ geoSIMEX_model <- geoSIMEX(model = naive_model,
                            roi.pc4.name="NAME_1.id", 
                            roi.pc5.name="NAME_1.id", 
                            roi.pc6.name="NAME_0.id", 
-                           aid.pc1.centroid.name="NAME_0.id", 
+                           aid.pc1.centroid.name="NAME_2.id", 
                            aid.precision.code="precision_code",
                            binary=FALSE,
                            sim_pc1=TRUE)

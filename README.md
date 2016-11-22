@@ -1,24 +1,30 @@
+
 # geoSIMEX
-geoSIMEX R Package
 
-# Example of geoSIMEX
-In R, open "Example/geoSIMEX_example.R"
+> geoSIMEX
 
-# geoSIMEX documentation
-In R, open "man/geoSIMEX.Rd" and click "preview"
+A package designed to incorporate spatial imprecision into regression estimates. 
 
-# Relevant Functions
-1. geoSIMEX - linear regression with spatial uncertainty
-2. expected_aid_ROI - calculates expected aid with in ROI
-3. prob_aid_ROI - calculates probability of aid allocated to ROI
-4. calc_lambda - calculates spatial uncertainty of aid project dataset
+## Installation
+```r
+library(devtools)
+install_github("itpir/geoMatch")
+```
+geoMatch imports both the sp, ECT packages.
 
-# Data Requirements
-geoSIMEX requires two datasets: (1) aid project data, and (2) country-level data (where the unit of analysis could be, for example, sub-counties). Both the aid finance and country-level data need to have hierarchies of administrative divisions. For example, in the aid finance data, if aid was allocated to a sub-county, information is needed about which district, region, and country that sub-county falls within. In country-level data, variables are needed for the sub-county, district, region and country. Names of these variables must be the same between the two datasets (e.g., if "ADM_3_NAME" is the variable name for sub counties in the country-level dataset, there must be a similar "ADM_3_NAME" in the aid project dataset.
+## Usage
 
-# Needed Fixes
-1. geoSIMEX needs ADM names to be entered as numbers; need to allow ADM info to be entered as strings
-2. In expected_aid_ROI function, make inputs to "probAidAssume" and "dollar_set" be strings of variable names instead of arrays of data. This will make inputs consistent with inputs for geoSIMEX function.
+```r
+CODE HERE
+```
 
+## License
 
+Copyright 2016 Daniel Miller Runfola (dan@danrunfola.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
