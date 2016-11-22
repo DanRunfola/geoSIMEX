@@ -14,7 +14,7 @@ library(rgdal)
 library(doBy)
 
 source("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/R/geoSIMEX.R")
-uga.adm3.df <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/merge_uga_adm3.csv")
+uga.adm <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/merge_uga_adm3.csv")
 uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv")
 
 #json.uganda <- fromJSON("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/summary.json")
@@ -144,7 +144,7 @@ uga.adm2.df <- summaryBy(. ~ NAME_2, data=uga.adm3.df, keep.names=TRUE)
                        aid.pc1.centroid.name="NAME_1.id"))
 
 ##### Calculating Expected Aid in ROI
-uga.aiddata.reduced$total_commitments <- log(uga.aiddata.reduced$total_commitments+1)
+#uga.aiddata.reduced$total_commitments <- log(uga.aiddata.reduced$total_commitments+1)
 uga.adm2.df$expected_aid <- expected_aid_ROI(aidData=uga.aiddata.reduced, 
                                              roiData=uga.adm2.df, 
                                              probAidAssume=uga.adm2.df$area, 
@@ -171,7 +171,7 @@ geoSIMEX_model <- geoSIMEX(model = naive_model,
                            roiData = uga.adm, 
                            aidData = uga.aiddata, 
                            aid.amount = "total_commitments",
-                           iterations = 100, 
+                           iterations = 25, 
                            bins = 4, 
                            roi.area = "area", 
                            roi.prob.aid = "area", 
