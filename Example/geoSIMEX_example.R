@@ -17,15 +17,25 @@ source("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/R/geoSIMEX.R")
 uga.adm3.df <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/merge_uga_adm3.csv")
 uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv")
 
-#source("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/man/geoSIMEX.Rd")
+#json.uganda <- fromJSON("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/summary.json")
+#uga.aiddata <- subset.aiddata(json.uganda)
 
 # --- --- --- --- --- --- --- --- --- --- #
 ##### Prepping Data for Analysis #####
 # --- --- --- --- --- --- --- --- --- --- #
 
+# Subsetting
+uga.aiddata <- uga.aiddata[uga.aiddata$ad_sector_names == "Government and civil society, general",]
+#uga.aiddata <- uga.aiddata[(uga.aiddata$transactions_end_year >= 2000) &
+#                                     (uga.aiddata$transactions_end_year <= 2010),]
+
 ##### Precision Code 6,8 projects don't have lat/long; give random lat/long
 uga.aiddata$longitude[is.na(uga.aiddata$longitude)] <- uga.aiddata$longitude[!is.na(uga.aiddata$longitude)][1]
 uga.aiddata$latitude[is.na(uga.aiddata$latitude)] <- uga.aiddata$latitude[!is.na(uga.aiddata$latitude)][1]
+
+uga.aiddata <- uga.aiddata[!is.na(uga.aiddata$transactions_end_year),]
+
+nrow(uga.aiddata)
 
 ##### Projecting AidData Data
 coordinates(uga.aiddata) <- ~longitude+latitude
@@ -35,7 +45,7 @@ proj4string(uga.aiddata) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84
   # NOTE: Can typically use getData to get ADM info; however, issue with server where this comes 
   # from... so might be resolved later? Consequently, I'm importing from my local drive. And
   # exporting the resulting dataset to github.
-if(FALSE){
+if(TRUE){
   setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/UGA_adm_shp")
   uga.3 <- readOGR(dsn = ".", layer = "UGA_adm3")
   
@@ -100,6 +110,7 @@ uga.adm3.df_IDS <- subset(uga.adm3.df, select=c(NAME_0, NAME_1, NAME_2, NAME_3_u
                                                 NAME_0.id, NAME_1.id, NAME_2.id, NAME_3_unique.id))
 
 uga.aiddata <- merge(uga.aiddata, uga.adm3.df_IDS, by=c("NAME_0", "NAME_1", "NAME_2", "NAME_3_unique"))
+uga.aiddata.reduced <- uga.aiddata
 
 # --- --- --- --- --- --- --- --- --- --- #
 ##### Analysis at ADM2 Level #####
@@ -113,11 +124,11 @@ uga.adm2.df <- summaryBy(. ~ NAME_2, data=uga.adm3.df, keep.names=TRUE)
 ##### Look at subset of AidData
 
 # Projects ended between 2000 and 2010
-uga.aiddata.reduced <- uga.aiddata[(uga.aiddata$transactions_end_year >= 2000) &
-                                     (uga.aiddata$transactions_end_year <= 2010),]
+
+
 
 # General budget support aid
-uga.aiddata.reduced <- uga.aiddata.reduced[uga.aiddata.reduced$ad_sector_names %in% c("General budget support"),]
+#uga.aiddata.reduced <- uga.aiddata.reduced[uga.aiddata.reduced$ad_sector_names %in% c("General budget support"),]
 
 ##### Calculating Spatial Uncertainty of Dataset
 (lambda <- calc_lambda(uga.aiddata.reduced, 
@@ -133,6 +144,7 @@ uga.aiddata.reduced <- uga.aiddata.reduced[uga.aiddata.reduced$ad_sector_names %
                        aid.pc1.centroid.name="NAME_1.id"))
 
 ##### Calculating Expected Aid in ROI
+uga.aiddata.reduced$total_commitments <- log(uga.aiddata.reduced$total_commitments+1)
 uga.adm2.df$expected_aid <- expected_aid_ROI(aidData=uga.aiddata.reduced, 
                                              roiData=uga.adm2.df, 
                                              probAidAssume=uga.adm2.df$area, 
@@ -144,16 +156,23 @@ uga.adm2.df$expected_aid <- expected_aid_ROI(aidData=uga.aiddata.reduced,
                                              roi.pc4.name="NAME_1.id", 
                                              roi.pc5.name="NAME_1.id", 
                                              roi.pc6.name="NAME_0.id", 
-                                             aid.pc1.centroid.name="NAME_1.id")
+                                             aid.pc1.centroid.name="NAME_2.id")
 
-naive_model <- lm(ncc4_2010e ~ expected_aid + gpw3_2000e, data=uga.adm2.df)
+uga.adm <- uga.adm2.df
+uga.aiddata <- uga.aiddata.reduced
+
+#uga.adm2.df$NTL_change <- uga.adm2.df$ncc4_2010e - uga.adm2.df$ncc4_2000e
+naive_model <- lm(ncc4_2010e ~ expected_aid + gpw3_2000e, data=uga.adm)
+summary(naive_model)
+
+
 
 geoSIMEX_model <- geoSIMEX(model = naive_model, 
                            geoSIMEXvariable = "expected_aid", 
-                           roiData = uga.adm2.df, 
-                           aidData = uga.aiddata.reduced, 
+                           roiData = uga.adm, 
+                           aidData = uga.aiddata, 
                            aid.amount = "total_commitments",
-                           iterations = 100, 
+                           iterations = 500, 
                            bins = 4, 
                            roi.area = "area", 
                            roi.prob.aid = "area", 
@@ -286,7 +305,7 @@ uga.adm3.df$expected_aid <- expected_aid_ROI(aidData=uga.aiddata.reduced,
                                           roi.pc6.name="NAME_0.id", 
                                           aid.pc1.centroid.name="NAME_1.id")
 
-naive_model <- lm(ncc4_2010e ~ expected_aid + gpw3_2000e, data=uga.adm3.df)
+naive_model <- lm(ncc4_2010e ~ expected_aid, data=uga.adm3.df)
 
 geoSIMEX_model <- geoSIMEX(model = naive_model, 
                            geoSIMEXvariable = "expected_aid", 
