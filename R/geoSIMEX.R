@@ -3268,7 +3268,7 @@ subset.aiddata <- function(json){
   
   # For now, have all the datasets loaded on github; will pull from there. 
   geo.data.name <- json$dataset
-  if(geo.data == "colombiaaims_geocodedresearchrelease_level1_v1_1_1"){
+  if(geo.data.name == "colombiaaims_geocodedresearchrelease_level1_v1_1_1"){
     # geo.data <- COLUMBIA DATA
   }
   
