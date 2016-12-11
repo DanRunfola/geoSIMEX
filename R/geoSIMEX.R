@@ -3264,7 +3264,16 @@ realization_of_aid <- function(param_set, dollar_set){
 subset.aiddata <- function(json){
   
   # Import dataset. Dataset names must be loaded from Rpackage and be the same that appears in JSON.
-  geo.data <- eval(parse(text=json$dataset))
+  #geo.data <- eval(parse(text=json$dataset))
+  
+  # For now, have all the datasets loaded on github; will pull from there. 
+  geo.data.name <- json$dataset
+  if(geo.data == "colombiaaims_geocodedresearchrelease_level1_v1_1_1"){
+    # geo.data <- COLUMBIA DATA
+  }
+  
+  # By default, just loading UGA data in here now.
+  geo.data <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv")
   
   # Number of filters to subset by
   num.filters <- length(json$request$options$filters)

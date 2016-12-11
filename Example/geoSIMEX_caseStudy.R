@@ -13,7 +13,7 @@ library(raster)
 
 
 
-source("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/R/geoSIMEX.R")
+source("https://github.com/itpir/geoSIMEX/blob/master/R/geoSIMEX.R")
 
 ##### Upload CSV and json #####
 json.uganda <- fromJSON("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/summary.json")
