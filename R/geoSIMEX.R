@@ -26,6 +26,18 @@ geoSIMEX_est <- function(model,
                          parallel, 
                          mc.cores){
   
+  roiData[,roi.pc1.name] <- paste(roiData[,roi.pc1.name], roiData[,roi.pc2.name], roiData[,roi.pc3.name], roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name])
+  roiData[,roi.pc2.name] <- paste(roiData[,roi.pc2.name], roiData[,roi.pc3.name], roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name])
+  roiData[,roi.pc3.name] <- paste(roiData[,roi.pc3.name], roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name])
+  roiData[,roi.pc4.name] <- paste(roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name])
+  roiData[,roi.pc5.name] <- paste(roiData[,roi.pc5.name], roiData[,roi.pc6.name])
+
+  aidData[,roi.pc1.name] <- paste(aidData[,roi.pc1.name], aidData[,roi.pc2.name], aidData[,roi.pc3.name], aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name])
+  aidData[,roi.pc2.name] <- paste(aidData[,roi.pc2.name], aidData[,roi.pc3.name], aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name])
+  aidData[,roi.pc3.name] <- paste(aidData[,roi.pc3.name], aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name])
+  aidData[,roi.pc4.name] <- paste(aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name])
+  aidData[,roi.pc5.name] <- paste(aidData[,roi.pc5.name], aidData[,roi.pc6.name])
+  
   ##### Converting roi.names into IDs #####
   
   #roiData[roi.pc1.name] <- as.numeric(as.factor(roiData[roi.pc1.name]))
@@ -2711,7 +2723,7 @@ paramCol <- function(i, aidData=aidData, roiData=roiData, probAidAssume=probAidA
   PC_temp <- as.numeric(aidDataPrj_Temp[aid.precision.code])
   
   # Getting information about subcounty & region that the aid project falls in
-  subcounty_temp <- roiData[roiData[roi.pc1.name] == as.numeric(aidDataPrj_Temp[aid.pc1.centroid.name]),]
+  subcounty_temp <- roiData[roiData[,roi.pc1.name] == aidDataPrj_Temp[,aid.pc1.centroid.name],]
   
   # Making temporary dataset that will merge into
   paramCol <- roiData
@@ -3286,7 +3298,7 @@ subset.aiddata <- function(json){
   proj4string(geo.data) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
   
   # ideally will change level depending on country.
-  gadm <- getData('GADM', country=json$iso3, level=3)
+  gadm <- getData('GADM', country=json$iso3, level=2)
   
   aiddata.gadm.over <- over(geo.data, gadm)
   
@@ -3294,6 +3306,7 @@ subset.aiddata <- function(json){
   geo.data$NAME_1 <- aiddata.gadm.over$NAME_1
   geo.data$NAME_2 <- aiddata.gadm.over$NAME_2
   geo.data$NAME_3 <- aiddata.gadm.over$NAME_3
+  geo.data$TYPE_2 <- aiddata.gadm.over$NAME_2
   geo.data <- geo.data@data
   
 
