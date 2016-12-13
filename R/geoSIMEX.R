@@ -3306,7 +3306,7 @@ subset.aiddata <- function(json){
   geo.data$NAME_1 <- aiddata.gadm.over$NAME_1
   geo.data$NAME_2 <- aiddata.gadm.over$NAME_2
   geo.data$NAME_3 <- aiddata.gadm.over$NAME_3
-  geo.data$TYPE_2 <- aiddata.gadm.over$NAME_2
+  geo.data$TYPE_2 <- aiddata.gadm.over$TYPE_2
   geo.data <- geo.data@data
   
 
