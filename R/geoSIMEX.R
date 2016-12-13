@@ -3263,6 +3263,7 @@ realization_of_aid <- function(param_set, dollar_set){
 
 subset.aiddata <- function(json){
   
+  
   # Import dataset. Dataset names must be loaded from Rpackage and be the same that appears in JSON.
   #geo.data <- eval(parse(text=json$dataset))
   
@@ -3276,6 +3277,25 @@ subset.aiddata <- function(json){
   if(geo.data.name == "ugandaaims_geocodedresearchrelease_level1_v1_4_1"){
     geo.data <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv") 
   }
+  
+  # Merging GADM names to data  
+  geo.data$latitude[is.na(geo.data$latitude)] <- geo.data$latitude[!is.na(geo.data$latitude)][1]
+  geo.data$longitude[is.na(geo.data$longitude)] <- geo.data$longitude[!is.na(geo.data$longitude)][1]
+  
+  coordinates(geo.data) <- ~longitude+latitude
+  proj4string(geo.data) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  
+  # ideally will change level depending on country.
+  gadm <- getData('GADM', country=json$iso3, level=3)
+  
+  aiddata.gadm.over <- over(geo.data, gadm)
+  
+  geo.data$NAME_0 <- aiddata.gadm.over$NAME_0
+  geo.data$NAME_1 <- aiddata.gadm.over$NAME_1
+  geo.data$NAME_2 <- aiddata.gadm.over$NAME_2
+  geo.data$NAME_3 <- aiddata.gadm.over$NAME_3
+  geo.data <- geo.data@data
+  
 
   # Number of filters to subset by
   num.filters <- length(json$request$options$filters)
