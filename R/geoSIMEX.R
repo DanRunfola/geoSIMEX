@@ -3268,26 +3268,38 @@ subset.aiddata <- function(json){
   
   # For now, have all the datasets loaded on github; will pull from there. 
   geo.data.name <- json$dataset
+  
   if(geo.data.name == "colombiaaims_geocodedresearchrelease_level1_v1_1_1"){
     # geo.data <- COLUMBIA DATA
   }
   
-  # By default, just loading UGA data in here now.
-  geo.data <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv")
-  
+  if(geo.data.name == "ugandaaims_geocodedresearchrelease_level1_v1_4_1"){
+    geo.data <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv") 
+  }
+
   # Number of filters to subset by
   num.filters <- length(json$request$options$filters)
   
   for(i in 1:num.filters){
     
-    # Checking to make sure filter exists in dataset (if doesn't, skip). Filter name in JSON must match filter
-    if(row.names(as.matrix(json$request$options$filters[i])) %in% names(geo.data)){ 
-      geo.data <- geo.data[geo.data[row.names(as.matrix(json$request$options$filters[i]))] == as.character(json$request$options$filters[i]),]
+    filter <- row.names(as.matrix(json$request$options$filters[i]))
+    
+    # Defaulting transaction_year to start year
+    if(filter == "transaction_year"){
+      filter <- "transactions_start_year"
     }
+    
+    
+    # Checking to make sure filter exists in dataset (if doesn't, skip). Filter name in JSON must match filter
+    if(filter %in% names(geo.data)){ 
+      geo.data <- geo.data[geo.data[filter][,1] %in% matrix(unlist(json$request$options$filters[i]))[,1],]
+    }
+    
   }
   return(geo.data)
 }
 
 
-
-
+# Questions: 
+# 1. Year filter is "transaction year" but that doesn't exist in Uganda data. It has "transaction_start_year" and "end"
+# I've defaulted to "start"
