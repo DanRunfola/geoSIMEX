@@ -26,13 +26,13 @@ geoSIMEX_est <- function(model,
                          parallel, 
                          mc.cores){
   
-  roiData[,roi.pc1.name] <- paste(roiData[,roi.pc1.name], roiData[,roi.pc2.name], roiData[,roi.pc3.name], roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name])
+  roiData[,roi.pc1.name] <- paste(roiData[,roi.pc1.name], roiData[,roi.pc2.name], roiData[,roi.pc3.name], roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name], roiData[,"TYPE_2"])
   roiData[,roi.pc2.name] <- paste(roiData[,roi.pc2.name], roiData[,roi.pc3.name], roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name])
   roiData[,roi.pc3.name] <- paste(roiData[,roi.pc3.name], roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name])
   roiData[,roi.pc4.name] <- paste(roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name])
   roiData[,roi.pc5.name] <- paste(roiData[,roi.pc5.name], roiData[,roi.pc6.name])
 
-  aidData[,roi.pc1.name] <- paste(aidData[,roi.pc1.name], aidData[,roi.pc2.name], aidData[,roi.pc3.name], aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name])
+  aidData[,roi.pc1.name] <- paste(aidData[,roi.pc1.name], aidData[,roi.pc2.name], aidData[,roi.pc3.name], aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name], aidData[,"TYPE_2"])
   aidData[,roi.pc2.name] <- paste(aidData[,roi.pc2.name], aidData[,roi.pc3.name], aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name])
   aidData[,roi.pc3.name] <- paste(aidData[,roi.pc3.name], aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name])
   aidData[,roi.pc4.name] <- paste(aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name])
