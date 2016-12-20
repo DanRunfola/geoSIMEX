@@ -26,18 +26,6 @@ geoSIMEX_est <- function(model,
                          parallel, 
                          mc.cores){
   
-  roiData[,roi.pc1.name] <- paste(roiData[,roi.pc1.name], roiData[,roi.pc2.name], roiData[,roi.pc3.name], roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name], roiData[,"TYPE_2"])
-  roiData[,roi.pc2.name] <- paste(roiData[,roi.pc2.name], roiData[,roi.pc3.name], roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name])
-  roiData[,roi.pc3.name] <- paste(roiData[,roi.pc3.name], roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name])
-  roiData[,roi.pc4.name] <- paste(roiData[,roi.pc4.name], roiData[,roi.pc5.name], roiData[,roi.pc6.name])
-  roiData[,roi.pc5.name] <- paste(roiData[,roi.pc5.name], roiData[,roi.pc6.name])
-
-  aidData[,roi.pc1.name] <- paste(aidData[,roi.pc1.name], aidData[,roi.pc2.name], aidData[,roi.pc3.name], aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name], aidData[,"TYPE_2"])
-  aidData[,roi.pc2.name] <- paste(aidData[,roi.pc2.name], aidData[,roi.pc3.name], aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name])
-  aidData[,roi.pc3.name] <- paste(aidData[,roi.pc3.name], aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name])
-  aidData[,roi.pc4.name] <- paste(aidData[,roi.pc4.name], aidData[,roi.pc5.name], aidData[,roi.pc6.name])
-  aidData[,roi.pc5.name] <- paste(aidData[,roi.pc5.name], aidData[,roi.pc6.name])
-  
   ##### Converting roi.names into IDs #####
   
   #roiData[roi.pc1.name] <- as.numeric(as.factor(roiData[roi.pc1.name]))
@@ -48,11 +36,18 @@ geoSIMEX_est <- function(model,
   #roi.pc5.name="NAME_1", 
   #roi.pc6.name="NAME_0", 
   
+  aid.pc1.centroid.name <- tail(sort(names(aidData)[grepl("ID_", names(aidData))]), n=1)
+  
+  ##### Subsetting ROI data
+  for(var in names(model$model)){
+    roiData <- roiData[!is.na(roiData[var]),]
+  }
+  
   ##### Creating Variables
   # Creating probability variable from area
   probAid_area <- as.matrix(roiData[roi.area] / sum(roiData[roi.area]))
   probAid <- as.matrix(roiData[roi.prob.aid] / sum(roiData[roi.prob.aid]))
-    
+  
   # Creating matrix of original precision codes
   precision.code.original <- as.matrix(aidData[aid.precision.code])
   
@@ -63,13 +58,29 @@ geoSIMEX_est <- function(model,
   param_set <- param_set * as.matrix(roiData[roi.area])
   maxLambda_denom <- sum(colSums(param_set))
   
-  ##### Calculate Naive Lambda #####
+  ##### Calculate Naive Model and Naive Lambda #####
   aidData[aid.precision.code] <- precision.code.original 
   param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAid_area, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)  
-  lambda_naive <- calcLambda(param_set, maxLambda_denom, as.matrix(roiData[roi.area]))
   
-  ##### FIND PROBABILITY THAT MAXIMIZES LIKELIHOOD HERE #####
+  # Update aid variable
+  if(binary){
+    roiData[geoSIMEXvariable] <- prob_aid(param_set=param_set)
+  } else{
+    roiData[geoSIMEXvariable] <- dollar_expected_value(param_set=param_set, dollar_set=as.matrix(aidData[aid.amount]))
+  }
+  
+  # Update Model
+  df.temp <- model$model
+  df.temp[geoSIMEXvariable] <- roiData[geoSIMEXvariable]
+  
+  # Update Model
+  model_naive <- update(model, data = df.temp)
+  
+  # Calculate Lambda
+  lambda_naive <- calcLambda(param_set, maxLambda_denom, as.matrix(roiData[roi.area]))
     
+  ##### FIND PROBABILITY THAT MAXIMIZES LIKELIHOOD HERE #####
+  
   ##### Simulating Data with Additional Error and Putting in One Dataframe #####
   prob.increase.list <- runif(iterations,0,1)
   
@@ -207,7 +218,7 @@ geoSIMEX_est <- function(model,
               df = df,
               variance.model.imprecision = model.imprecision.variance,
               residuals = residuals,
-              naive.model = model,
+              naive.model = model_naive,
               lambda_naive = lambda_naive,
               simulations = iterations,
               geoSIMEXvariable = geoSIMEXvariable,
@@ -315,15 +326,15 @@ geoSIMEX.default <- function(model,
                              iterations=500, 
                              bins=4, 
                              fitting.method = "quadratic", 
-                             roi.area="area",  
-                             roi.prob.aid="prob",
-                             roi.pc1.name="pc1.id", 
-                             roi.pc2.name="pc2.id", 
-                             roi.pc3.name="pc3.id", 
-                             roi.pc4.name="pc4.id", 
-                             roi.pc5.name="pc5.id", 
-                             roi.pc6.name="pc6.id",  
-                             aid.pc1.centroid.name="centroid.pc1.id", 
+                             roi.area="Shape_Area",  
+                             roi.prob.aid="Shape_Area",
+                             roi.pc1.name="ID_3", 
+                             roi.pc2.name="ID_2", 
+                             roi.pc3.name="ID_1", 
+                             roi.pc4.name="ID_1", 
+                             roi.pc5.name="ID_1", 
+                             roi.pc6.name="ID_0",  
+                             aid.pc1.centroid.name="ID_3", 
                              aid.precision.code="precision.code",
                              binary=FALSE,
                              sim_pc1=TRUE,
@@ -399,8 +410,7 @@ print.summary.geoSIMEX <- function(x, ...){
   printCoefmat(x$coefficients, P.value=TRUE, has.Pvalue=TRUE)
 }
 
-plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=FALSE, includeTitle=TRUE, name_variable="", ylim="default"){
-  
+plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=TRUE, includeTitle=TRUE, name_variable="", ylim="default"){
   
   #name_variable = variable
   # NOTE: Can make things like "all simulations", "confidence bands", "% interval"
@@ -442,20 +452,24 @@ plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=FALSE, inclu
     
   }
   
+
   
   # Plot Mean Lambda Values
   ylim==c(NA,NA)
   
+
+  
   if(ylim[1] == "default"){
-  
-  plot(x$valuesMean$lambda, x$valuesMean[,variable],
-       xlab = expression((lambda)),
-       ylab = paste(variable_name, " coefficient", sep=""),
-       main = title,
-       xlim = c(0,1),
-       ylim = c(min(var.vales.all), max(var.vales.all)),
-       pch  = 16)
-  
+    
+    plot(x$valuesMean$lambda, x$valuesMean[,variable],
+         xlab = expression((lambda)),
+         ylab = paste(variable_name, " coefficient", sep=""),
+         main = title,
+         xlim = c(0,1),
+         ylim = c(min(var.vales.all), max(var.vales.all)),
+         pch  = 16,
+         col="red")
+    
   } else{
     plot(x$valuesMean$lambda, x$valuesMean[,variable],
          xlab = expression((lambda)),
@@ -463,12 +477,13 @@ plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=FALSE, inclu
          main = title,
          xlim = c(0,1),
          ylim = ylim,
-         pch  = 16)
+         pch  = 16,
+         col="red")
   }
   
   if(allSimulations){
     points(x$values$lambda, x$values[,variable],
-           pch=".")
+           pch=19, cex = .15)
   }
   
   points(0,x$coefficients[,variable],
@@ -499,478 +514,6 @@ plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=FALSE, inclu
   
 }
 
-##### SECTION 1_BUFFER: GEOSIMEX WITH BUFFER #####
-
-geoSIMEX_est <- function(model, 
-                         geoSIMEXvariable, 
-                         roiData, 
-                         aidData, 
-                         aid.amount,
-                         iterations, 
-                         bins, 
-                         fitting.method, 
-                         roi.area,  
-                         roi.prob.aid,
-                         roi.pc1.name, 
-                         roi.pc2.name, 
-                         roi.pc3.name, 
-                         roi.pc4.name, 
-                         roi.pc5.name, 
-                         roi.pc6.name,  
-                         aid.pc1.centroid.name, 
-                         aid.precision.code,
-                         binary,
-                         sim_pc1,
-                         parallel, 
-                         mc.cores){
-  
-  ##### Converting roi.names into IDs #####
-  
-  #roiData[roi.pc1.name] <- as.numeric(as.factor(roiData[roi.pc1.name]))
-  #roi.pc1.name="NAME_2", 
-  #roi.pc2.name="NAME_2", 
-  #roi.pc3.name="NAME_2", 
-  #roi.pc4.name="NAME_1", 
-  #roi.pc5.name="NAME_1", 
-  #roi.pc6.name="NAME_0", 
-  
-  ##### Creating Variables
-  # Creating probability variable from area
-  probAid_area <- as.matrix(roiData[roi.area] / sum(roiData[roi.area]))
-  probAid <- as.matrix(roiData[roi.prob.aid] / sum(roiData[roi.prob.aid]))
-  
-  # Creating matrix of original precision codes
-  precision.code.original <- as.matrix(aidData[aid.precision.code])
-  
-  ##### Calculating Maximum Lambda Denominator #####
-  aidData[aid.precision.code] <- 6  
-  param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAid_area, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)  
-  param_set[param_set!=0] <- 1
-  param_set <- param_set * as.matrix(roiData[roi.area])
-  maxLambda_denom <- sum(colSums(param_set))
-  
-  ##### Calculate Naive Lambda #####
-  aidData[aid.precision.code] <- precision.code.original 
-  param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAid_area, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)  
-  lambda_naive <- calcLambda(param_set, maxLambda_denom, as.matrix(roiData[roi.area]))
-  
-  ##### FIND PROBABILITY THAT MAXIMIZES LIKELIHOOD HERE #####
-  
-  ##### Simulating Data with Additional Error and Putting in One Dataframe #####
-  prob.increase.list <- runif(iterations,0,1)
-  
-  geoSimulateError.results <- mclapply(prob.increase.list, geoSimulateError, 
-                                       aidData=aidData, 
-                                       roiData=roiData, 
-                                       probAidAssume=probAid, 
-                                       PC_researcherSees=precision.code.original, 
-                                       maxLambda_denom=maxLambda_denom,
-                                       roi.area=roi.area,
-                                       aid.precision.code=aid.precision.code, 
-                                       roi.pc1.name=roi.pc1.name, 
-                                       roi.pc2.name=roi.pc2.name, 
-                                       roi.pc3.name=roi.pc3.name, 
-                                       roi.pc4.name=roi.pc4.name, 
-                                       roi.pc5.name=roi.pc5.name, 
-                                       roi.pc6.name=roi.pc6.name, 
-                                       aid.pc1.centroid.name=aid.pc1.centroid.name,
-                                       aid.amount=aid.amount,
-                                       model=model,
-                                       geoSIMEXvariable=geoSIMEXvariable,
-                                       binary=binary,
-                                       sim_pc1=sim_pc1,
-                                       mc.cores=2)
-  
-  # ncol(...) is throwing the error. Figure out why? says subscript is out of bounds. ??
-  geoSimulateError.results.df <- matrix(NA, ncol=ncol(geoSimulateError.results[[1]][["model.SIMEX.coefs"]]),nrow=0)
-  geoSimulateError.results.df <- as.data.frame(geoSimulateError.results.df)
-  
-  geoSimulateError.results.df.se <- matrix(NA, ncol=ncol(geoSimulateError.results[[1]][["model.SIMEX.se"]]),nrow=0)
-  geoSimulateError.results.df.se <- as.data.frame(geoSimulateError.results.df.se)
-  
-  for(i in 1:length(geoSimulateError.results)){
-    geoSimulateError.results.df <- rbind(geoSimulateError.results.df, geoSimulateError.results[[i]]$model.SIMEX.coefs)
-    geoSimulateError.results.df.se <- rbind(geoSimulateError.results.df.se, geoSimulateError.results[[i]]$model.SIMEX.se)
-  }
-  
-  ##### Extrapolated Mean Coefficient #####  
-  
-  # Putting Into Bins
-  extrapolatedMean.df <- as.data.frame(matrix(NA, nrow=0, ncol=ncol(geoSimulateError.results.df)))
-  
-  minLambda <- min(geoSimulateError.results.df$lambda)
-  maxLambda <- max(geoSimulateError.results.df$lambda)
-  
-  binSize <- (maxLambda - minLambda) / bins
-  
-  binSize_lb <- minLambda
-  binSize_ub <- minLambda + binSize
-  
-  numIter <- (maxLambda - minLambda) / binSize
-  for(i in 1:ceiling(numIter)){
-    
-    geoSimulateError.temp <- geoSimulateError.results.df[(geoSimulateError.results.df$lambda >= binSize_lb) & (geoSimulateError.results.df$lambda <= binSize_ub),]
-    geoSimulateError.temp.mean <- colMeans(geoSimulateError.temp)
-    extrapolatedMean.df <- rbind(extrapolatedMean.df, geoSimulateError.temp.mean)
-    
-    binSize_lb <- binSize_lb + binSize
-    binSize_ub <- binSize_ub + binSize 
-  }
-  names(extrapolatedMean.df) <- names(geoSimulateError.results.df)
-  
-  # Regressions Using Bins
-  extrapolatedMean.df$lambda_sq <- extrapolatedMean.df$lambda^2
-  
-  numVars <- ncol(extrapolatedMean.df) - 2
-  coef.geoSIMEX <- matrix(NA, nrow=1, ncol=numVars)
-  for(i in 1:numVars){
-    coef.geoSIMEX[i] <- summary(lm(as.matrix(extrapolatedMean.df[i]) ~ lambda + lambda_sq, data = extrapolatedMean.df))$coefficients[1]
-  }
-  coef.geoSIMEX <- as.data.frame(coef.geoSIMEX)
-  names(coef.geoSIMEX) <- head(names(extrapolatedMean.df), -2)
-  
-  ##### Bootstrap Standard Error #####
-  numberBootIter <- nrow(geoSimulateError.results.df)
-  
-  geoSimulateError.results.df$lambda_sq <- geoSimulateError.results.df$lambda^2
-  geoSimulateError.results.df.se$lambda_sq <- geoSimulateError.results.df.se$lambda^2
-  
-  bootIter.list <- mclapply(seq(1:numberBootIter), bootIter, 
-                            geoSimulateError.results.df=geoSimulateError.results.df, 
-                            geoSimulateError.results.df.se=geoSimulateError.results.df.se,
-                            bins=bins, 
-                            numFromBin=1,
-                            mc.cores=2)
-  
-  boot.coefs.matrix <- as.data.frame(matrix(NA, nrow=0, ncol=ncol(bootIter.list[[1]]$coefs.geoSIMEX.boot)))
-  boot.se.matrix <- as.data.frame(matrix(NA, nrow=0, ncol=ncol(bootIter.list[[1]]$se.geoSIMEX.boot)))
-  for(i in 1:length(bootIter.list)){
-    boot.coefs.matrix <- rbind(boot.coefs.matrix, bootIter.list[[i]]$coefs.geoSIMEX.boot)
-    boot.se.matrix <- rbind(boot.se.matrix, bootIter.list[[i]]$se.geoSIMEX.boot)
-  }
-  
-  calcSE <- function(i, boot.coefs.matrix, boot.se.matrix){
-    se <- sqrt(sum((1/length(boot.coefs.matrix[,i]))*(boot.se.matrix[,i]^2 + (boot.coefs.matrix[,i] - mean(boot.coefs.matrix[,i]))^2)))
-    return(se)
-  }
-  
-  se.geoSIMEX <- lapply(1:ncol(boot.coefs.matrix), calcSE, boot.coefs.matrix=boot.coefs.matrix, boot.se.matrix=boot.se.matrix) 
-  se.geoSIMEX <- as.data.frame(se.geoSIMEX)
-  names(se.geoSIMEX) <- names(boot.coefs.matrix)
-  
-  ##### Standard Error by Parts #####
-  model.var <- colMeans(boot.se.matrix^2)
-  
-  calcVar.imprecision <- function(i, boot.coefs.matrix){
-    var <- sum((1/nrow(boot.coefs.matrix)) * (boot.coefs.matrix[,i] - mean(boot.coefs.matrix[,i]))^2)
-    return(var)
-  }
-  
-  var.imprecision <- lapply(1:ncol(boot.coefs.matrix), calcVar.imprecision, boot.coefs.matrix=boot.coefs.matrix)
-  var.imprecision <- as.data.frame(var.imprecision)
-  names(var.imprecision) <- names(boot.coefs.matrix)
-  
-  #sqrt(model.var + var.imprecision)
-  #se.geoSIMEX
-  
-  
-  ##### Collecting Results #####
-  row.names(coef.geoSIMEX) <- "Coefficients"
-  coef <- t(coef.geoSIMEX)
-  df = model$df
-  
-  # Values so will work with stargazer
-  # https://github.com/cran/stargazer/blob/master/R/stargazer-internal.R
-  # NOTE: Fix so will reflect geoSIMEX coefficients and not naive coefficients?
-  #residuals = model$residuals 
-  residuals <- rep(NA, length(model$residuals))
-  
-  model.imprecision.variance <- rbind(model.var,var.imprecision)
-  row.names(model.imprecision.variance) <- c("Model Variance", "Imprecision Variance")
-  model.imprecision.variance <- as.data.frame(model.imprecision.variance)
-  
-  return(list(coefficients=coef.geoSIMEX,
-              StdErr=se.geoSIMEX,
-              df = df,
-              variance.model.imprecision = model.imprecision.variance,
-              residuals = residuals,
-              naive.model = model,
-              lambda_naive = lambda_naive,
-              simulations = iterations,
-              geoSIMEXvariable = geoSIMEXvariable,
-              values=geoSimulateError.results.df,
-              values.se=geoSimulateError.results.df.se,
-              valuesMean=extrapolatedMean.df))
-}
-
-# @title Geographic SIMEX
-# 
-# @author AidData
-# 
-# @import parallel
-# 
-# @description
-# \code{geoSIMEX} Implementation of the geoSIMEX algorithm for models 
-# with spatial uncertainty. Package built to work with data from 
-# AidData's data extraction tool.
-# 
-# @usage
-# geoSIMEX(model, geoSIMEXvariable, roiData, aidData, aid.amount, 
-# iterations=500, bins=3, fitting.method = "quadratic", roi.area="area",  
-# roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", 
-# roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc5.name="pc6.id",  
-# aid.pc1.centroid.name="centroid.pc1.id", aid.precision.code="precision.code",
-# parallel=TRUE, mc.cores=2)
-# 
-# @param model the naive model
-# @param SIMEXvariable character containing the name of the variable with spatial uncertainty
-# @param roiData name of dataframe of ROI data 
-# @param aidData name of dataframe of aid project data
-# @param aid.amount character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.
-# @param iterations number of simulated error iterations
-# @param bins number of bins to group coefficients
-# @param fitting.method fitting method for the extrapolation. linear and quadratic are implemented.
-# @param roi.area character containing the name of the variable in the ROI dataset which contains areas of ROIs. "area" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc1.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc2.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 2 spatial area that each ROI falls within. "pc2.id" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc3.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 3 spatial area that each ROI falls within. "pc3.id" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc4.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 4 spatial area that each ROI falls within. "pc4.id" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc6.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 6 and 8 spatial area that each ROI falls within. "pc6.id" is the default name in datasets produced by AidData's data extraction tool
-# @param aid.pc1.centroid.name character containing the name of the variable in the aidData dataset which contains names or IDs of a precision code 1 spatial area that the aid project falls within. "centroid.pc1.id" is the default name in datasets produced by AidData's data extraction tool
-# @param aid.precision.code character containing the name of the variable in the aidData dataset which contains precision codes for each project. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
-# @param parallel parallelize iterations
-# @param mc.cores number of cores to use for parallelization
-# 
-# @details The values contained within roi.pc1.name and aid.pc1.centroid.name variables should be the same.
-# 
-# @note The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website]. 
-# 
-# Just like the lm() and glm() packages, geoSIMEX() is equipped to work with stargazer.
-# 
-# @references Cook, J.R. and Stefanski, L.A. (1994) Simulation-extrapolation estimation in parametric measurement error models. Journal of American Statistical Association, 89, 1314 – 1328
-# 
-# @examples 
-# set.seed(42)
-# 
-# # Generating Country Dataset
-# countryData <- as.data.frame(matrix(NA, nrow=120, ncol=0))
-# countryData$pc1.id <- 1:120
-# countryData$pc2.id <- rep(1:(120/3), each=3)
-# countryData$pc3.id <- rep(1:(120/(3*2)), each=(3*2))
-# countryData$pc4.id <- rep(1:(120/(3*2*4)), each=(3*2*4))
-# countryData$pc6.id <- 1
-# countryData$area <- rgamma(120, shape=2)
-# 
-# # Creating Aid Dataset Without Error
-# aidData <- as.data.frame(matrix(NA,nrow=100,ncol=0))
-# aidData$disbursement <- runif(100,0,1) * 10000000 
-# aidData$centroid.pc1.id <- sample(size=100,x=c(1:120), prob=rep(1/120, 120), replace=TRUE)
-# aidData$precision.code <- 1
-# 
-# # Adding True Aid to Country Dataset
-# countryData$aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, dollar_set=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
-# 
-# # Defining True Relation Between Aid and Wealth
-# countryData$wealth <- countryData$aid + rnorm(120) * 0.1
-# 
-# # Creating Datasets with Uncertainty
-# countryData <- subset(countryData, select = -c(aid))
-# aidData$precision.code <- sample(size=100, x=c(1,2,3,4,6), prob=rep(1/5, 5), replace=TRUE)
-# 
-# # Calculating Expected Aid and Running Naive Model
-# countryData$Expected.Aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, dollar_set=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
-# 
-# lm_naive <- lm(wealth ~ Expected.Aid, data=countryData)
-# 
-# # Implementing GeoSIMEX
-# lm_geoSIMEX <- geoSIMEX(model = lm_naive, 
-#                         geoSIMEXvariable = "Expected.Aid", 
-#                         roiData = countryData, 
-#                         aidData = aidData, 
-#                         aid.amount = "disbursement")
-# 
-# summary(lm_geoSIMEX)
-# plot(lm_geoSIMEX, variable="Expected.Aid") 
-
-geoSIMEX <- function(x, ...) UseMethod("geoSIMEX")
-
-geoSIMEX.default <- function(model, 
-                             geoSIMEXvariable, 
-                             roiData, 
-                             aidData, 
-                             aid.amount,
-                             iterations=500, 
-                             bins=4, 
-                             fitting.method = "quadratic", 
-                             roi.area="area",  
-                             roi.prob.aid="prob",
-                             roi.pc1.name="pc1.id", 
-                             roi.pc2.name="pc2.id", 
-                             roi.pc3.name="pc3.id", 
-                             roi.pc4.name="pc4.id", 
-                             roi.pc5.name="pc5.id", 
-                             roi.pc6.name="pc6.id",  
-                             aid.pc1.centroid.name="centroid.pc1.id", 
-                             aid.precision.code="precision.code",
-                             binary=FALSE,
-                             sim_pc1=TRUE,
-                             parallel=TRUE, 
-                             mc.cores=2){
-  
-  est <- geoSIMEX_est(model=model, 
-                      geoSIMEXvariable=geoSIMEXvariable, 
-                      roiData=roiData, 
-                      aidData=aidData, 
-                      aid.amount=aid.amount,
-                      iterations=iterations, 
-                      bins=bins, 
-                      fitting.method = fitting.method, 
-                      roi.area=roi.area, 
-                      roi.prob.aid=roi.prob.aid,
-                      roi.pc1.name=roi.pc1.name, 
-                      roi.pc2.name=roi.pc2.name, 
-                      roi.pc3.name=roi.pc3.name, 
-                      roi.pc4.name=roi.pc4.name, 
-                      roi.pc5.name=roi.pc5.name, 
-                      roi.pc6.name=roi.pc6.name,  
-                      aid.pc1.centroid.name=aid.pc1.centroid.name, 
-                      aid.precision.code=aid.precision.code,
-                      binary=binary,
-                      sim_pc1=sim_pc1,
-                      parallel=parallel, 
-                      mc.cores=mc.cores)
-  
-  est$call <- model$call
-  
-  class(est) <- "geoSIMEX"
-  est
-}
-
-print.geoSIMEX <- function(x, ...){
-  cat("Naive Model:\n")
-  print(x$call)
-  cat("\ngeoSIMEX-Variables: ", x$geoSIMEXvariable, sep="")
-  cat("\nNumer of Simulations: ", x$simulations, sep= "")
-  cat("\n\nCoefficients:\n")
-  print(x$coefficients, row.names=FALSE)  
-}
-
-summary.geoSIMEX <- function(object, ...){
-  
-  Coef <- as.numeric(object$coefficients)
-  StdErr <- as.numeric(object$StdErr)
-  tval <- Coef / StdErr
-  
-  TAB <- cbind(Estimate = Coef,
-               StdErr = StdErr,
-               t.value = tval,
-               p.value = 2*pt(-abs(tval), df=object$df))
-  
-  TAB <- as.data.frame(TAB)
-  row.names(TAB) <- names(object$coefficients)
-  names(TAB) <- c("Estimate","Std. Error","t.value","p.value")
-  
-  res <- list(call=object$call,
-              coefficients=TAB)
-  
-  class(res) <- "summary.geoSIMEX"
-  res
-}
-
-print.summary.geoSIMEX <- function(x, ...){
-  
-  cat("Call:\n")
-  print(x$call)
-  cat("\n")
-  
-  printCoefmat(x$coefficients, P.value=TRUE, has.Pvalue=TRUE)
-}
-
-plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=FALSE, includeTitle=TRUE, name_variable=""){
-  
-  
-  #name_variable = variable
-  # NOTE: Can make things like "all simulations", "confidence bands", "% interval"
-  # all parameters / options.
-  
-  if(name_variable == ""){
-    variable_name =  variable
-  } else {
-    variable_name = name_variable
-  }
-  
-  # Calculating 95\% Confidence Bands
-  t_critical <- qt((1-confInt/100), x$df)
-  
-  coef.geoSIMEX <- x$coefficients[,variable]
-  se.geoSIMEX <- x$StdErr[,variable]
-  CI.geoSIMEX <- as.data.frame(matrix(NA, nrow=2, ncol=2))
-  names(CI.geoSIMEX) <- c("value", "lambda")
-  CI.geoSIMEX$lambda <- 0
-  CI.geoSIMEX$value[1] <- coef.geoSIMEX - t_critical*se.geoSIMEX
-  CI.geoSIMEX$value[2] <- coef.geoSIMEX + t_critical*se.geoSIMEX
-  
-  coef.naive <- as.data.frame(t(x$naive.model$coefficients))[,variable]
-  se.naive <- as.data.frame(summary(x$naive.model)$coefficients)[variable,2]
-  CI.naive <- as.data.frame(matrix(NA, nrow=2, ncol=2))
-  names(CI.naive) <- c("value", "lambda")
-  CI.naive$lambda <- x$lambda_naive
-  CI.naive$value[1] <- coef.naive - t_critical*se.naive
-  CI.naive$value[2] <- coef.naive + t_critical*se.naive
-  
-  # All Variable Values to Define Min / Max ylim of Plot
-  var.vales.all <- c(x$valuesMean[,variable], x$values[,variable], x$coefficients[,variable], CI.geoSIMEX$value[1], CI.geoSIMEX$value[2], CI.naive$value[1], CI.naive$value[2])
-  
-  title = ""
-  
-  if(includeTitle){
-    
-    title = paste("geoSIMEX Plot of ",variable_name, sep="")
-    
-  }
-  
-  
-  # Plot Mean Lambda Values
-  plot(x$valuesMean$lambda, x$valuesMean[,variable],
-       xlab = expression((lambda)),
-       ylab = paste(variable_name, " coefficient", sep=""),
-       main = title,
-       xlim = c(0,1),
-       ylim = c(min(var.vales.all), max(var.vales.all)),
-       pch  = 16)
-  
-  if(allSimulations){
-    points(x$values$lambda, x$values[,variable],
-           pch=".")
-  }
-  
-  points(0,x$coefficients[,variable],
-         pch=1)
-  
-  # Prepping Data for Lines
-  var <- x$valuesMean[,variable]
-  lambda <- x$valuesMean$lambda
-  fit <- lm(var ~ lambda + I(lambda^2))
-  
-  newdat_sim = data.frame(lambda = seq(min(lambda), max(lambda), length.out = 100))
-  newdat_sim$pred = predict(fit, newdata = newdat_sim)
-  
-  newdat_extrp = data.frame(lambda = seq(0, min(lambda), length.out = 100))
-  newdat_extrp$pred = predict(fit, newdata = newdat_extrp)
-  
-  # Plotting Lines
-  with(newdat_sim, lines(x = lambda, y = pred))
-  with(newdat_extrp, lines(x = lambda, y = pred, lty = 2))
-  
-  # Plot Naive Model
-  points(x$lambda_naive, coef.naive,
-         pch="*")
-  
-  # Plotting Confidence Intervals
-  lines(x=CI.geoSIMEX$lambda, y=CI.geoSIMEX$value, lty=5)
-  lines(x=CI.naive$lambda, y=CI.naive$value, lty=1)
-  
-}
 
 ##### SECTION 1_1: GEOSIMEX SIMULATION FUNCTION, 2 VARS #####
 
@@ -1935,7 +1478,7 @@ modelAverageMaxLikeRandProb_est <- function(iterations,
       # UPDATE PROB AID GUESS
       # If has lower AIC than best, update aic.best and probAidGuess.best
       if(extractAIC(model)[2] < aic.best){
-      #if(abs(extractAIC(model)[2]) < abs(aic.best)){  
+        #if(abs(extractAIC(model)[2]) < abs(aic.best)){  
         aic.best <- AIC(model)
         probAidGuess.best <- probAidGuess.proposed
       }
@@ -2629,9 +2172,12 @@ print.summary.modelAverageRandROI <- function(x, ...){
 # @param aid.precision.code character containing the name of the variable in the aidData dataset which contains precision codes for each project. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
 #  
 # @note The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website].
-expected_aid_ROI <- function(aidData, roiData, probAidAssume, dollar_set, aid.precision.code, roi.pc1.name, roi.pc2.name, roi.pc3.name, roi.pc4.name, roi.pc5.name, roi.pc6.name, aid.pc1.centroid.name){
-  param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
-  aid <- dollar_expected_value(param_set=param_set, dollar_set=dollar_set)
+expected_aid_ROI <- function(aidData, roiData, roi.prob.aid, dollar_set, aid.precision.code, roi.pc1.name="ID_3", roi.pc2.name="ID_2", roi.pc3.name="ID_1", roi.pc4.name="ID_1", roi.pc5.name="ID_1", roi.pc6.name="ID_0", aid.pc1.centroid.name="ID_3"){
+  probAid_area <- as.matrix(roiData[roi.prob.aid] / sum(roiData[roi.prob.aid]))
+  dollar_set_values <- as.matrix(aidData[dollar_set])
+  
+  param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAid_area, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
+  aid <- dollar_expected_value(param_set=param_set, dollar_set=dollar_set_values)
   return(aid)
 }
 
@@ -2723,7 +2269,7 @@ paramCol <- function(i, aidData=aidData, roiData=roiData, probAidAssume=probAidA
   PC_temp <- as.numeric(aidDataPrj_Temp[aid.precision.code])
   
   # Getting information about subcounty & region that the aid project falls in
-  subcounty_temp <- roiData[roiData[,roi.pc1.name] == aidDataPrj_Temp[,aid.pc1.centroid.name],]
+  subcounty_temp <- roiData[roiData[roi.pc1.name] == as.numeric(aidDataPrj_Temp[aid.pc1.centroid.name]),]
   
   # Making temporary dataset that will merge into
   paramCol <- roiData
@@ -2795,7 +2341,7 @@ prob_aid <- function(param_set){
 }
 
 geoSimulateError <- function(probIncPC, aidData=aidData, roiData=roiData, probAidAssume=probAid, PC_researcherSees=precision.code.original, maxLambda_denom=maxLambda_denom, roi.area=roi.area, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name, aid.amount=aid.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary, sim_pc1=sim_pc1){
-    
+  
   # Initializing Results Matrix
   results <- matrix(NA, ncol=2,nrow=1)
   results <- as.data.frame(results)
@@ -2875,7 +2421,7 @@ geoSimulateError2 <- function(iter, aidData_1, aidData_2, roiData, probAidAssume
     probIncPC_1 <- runif(1)
     probIncPC_2 <- runif(1)
   }
-    
+  
   # to make sure not don't get too correlated
   if(probIncPC_1 > .85){
     probIncPC_2 <- 1 - probIncPC_2
@@ -3274,13 +2820,13 @@ realization_of_aid <- function(param_set, dollar_set){
 ##### SECTION 4: SUBSETTING AID DATA #####
 
 subset.aiddata <- function(json){
+    
+  #### Import Dataset
+  # Eventually all datasets will be imported into R, so can just use this.
+  #geo.data <- eval(parse(text=as.character(json$release_data[5])))
   
-  
-  # Import dataset. Dataset names must be loaded from Rpackage and be the same that appears in JSON.
-  #geo.data <- eval(parse(text=json$dataset))
-  
-  # For now, have all the datasets loaded on github; will pull from there. 
-  geo.data.name <- json$dataset
+  # For now, have all the datasets loaded on github; will pull from there. So get name and use for-loops   
+  geo.data.name <- json$release_data$dataset
   
   if(geo.data.name == "colombiaaims_geocodedresearchrelease_level1_v1_1_1"){
     # geo.data <- COLUMBIA DATA
@@ -3297,42 +2843,69 @@ subset.aiddata <- function(json){
   coordinates(geo.data) <- ~longitude+latitude
   proj4string(geo.data) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
   
-  # ideally will change level depending on country.
-  gadm <- getData('GADM', country=json$iso3, level=2)
+  #### Extracting GADM Data to Aid Data
+  gadm <- getData('GADM', country=toupper(substr(json$boundary$name,1,3)), level=as.numeric(substr(json$boundary$name,8,8)))
   
   aiddata.gadm.over <- over(geo.data, gadm)
   
+  # Will need to adjust depending on how many adm zones using
   geo.data$NAME_0 <- aiddata.gadm.over$NAME_0
   geo.data$NAME_1 <- aiddata.gadm.over$NAME_1
   geo.data$NAME_2 <- aiddata.gadm.over$NAME_2
   geo.data$NAME_3 <- aiddata.gadm.over$NAME_3
-  geo.data$TYPE_2 <- aiddata.gadm.over$TYPE_2
+  geo.data$ID_0 <- aiddata.gadm.over$ID_0
+  geo.data$ID_1 <- aiddata.gadm.over$ID_1
+  geo.data$ID_2 <- aiddata.gadm.over$ID_2
+  geo.data$ID_3 <- aiddata.gadm.over$ID_3
   geo.data <- geo.data@data
   
-
+  #### Subsetting by Filter
+  
   # Number of filters to subset by
-  num.filters <- length(json$request$options$filters)
+  num.filters <- length(json$release_data$filters)
   
   for(i in 1:num.filters){
     
-    filter <- row.names(as.matrix(json$request$options$filters[i]))
+    filter <- names(json$release_data$filters)[i]
+    use.filter <- TRUE
     
-    # Defaulting transaction_year to start year
+    if( (filter == "donors") & (json$release_data$filters[i] == "All") ){
+      use.filter <- FALSE
+    }
+    
     if(filter == "transaction_year"){
-      filter <- "transactions_start_year"
+        
+      # Loop through years, add "1" to keep.obs if meets condition to keep observation
+      keep.obs <- rep(0,length(geo.data$transactions_start_year))
+      for(year in matrix(unlist(json$release_data$filters[i]))[,1]){
+        keep.obs <- keep.obs + as.numeric((year >= geo.data$transactions_start_year) & (year <= geo.data$transactions_end_year))
+      }
+      
+      geo.data <- geo.data[keep.obs > 0,]
+      
+      use.filter <- FALSE
     }
     
     
-    # Checking to make sure filter exists in dataset (if doesn't, skip). Filter name in JSON must match filter
-    if(filter %in% names(geo.data)){ 
-      geo.data <- geo.data[geo.data[filter][,1] %in% matrix(unlist(json$request$options$filters[i]))[,1],]
-    }
+    # Checking to ensure filter exists in dataset.
+    # If doesn't exist, skip.
+    # Filter name in JSON must match variable name in aid dataset
     
+    if(use.filter){
+      
+      # Checking to make sure filter exists in dataset (if doesn't, skip). Filter name in JSON must match filter
+      if(filter %in% names(geo.data)){ 
+        geo.data <- geo.data[geo.data[filter][,1] %in% matrix(unlist(json$release_data$filters[i]))[,1],]
+      }
+      
+    }
+        
   }
+  
+  # Removing NA rows.
+  geo.data <- geo.data[!is.na(geo.data$project_id),]
+  
   return(geo.data)
 }
 
 
-# Questions: 
-# 1. Year filter is "transaction year" but that doesn't exist in Uganda data. It has "transaction_start_year" and "end"
-# I've defaulted to "start"
