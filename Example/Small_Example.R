@@ -7,7 +7,8 @@ source("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/R/geoSIMEX_updatin
 uga.adm <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/merge_uga_adm3.csv")
 
 # Aid Project Level Data
-uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv")
+#uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv")
+uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/uga_aiddata_gadm.csv")
 
 ##### Calculating Expected Amount of Aid in Each ADM #####
 uga.adm$expected_aid <- expected_aid_ROI(aidData=uga.aiddata, 
@@ -15,13 +16,34 @@ uga.adm$expected_aid <- expected_aid_ROI(aidData=uga.aiddata,
                                          roi.prob.aid=uga.adm$area, 
                                          dollar_set=uga.aiddata$total_commitments, 
                                          aid.precision.code=uga.aiddata$precision_code, 
-                                         roi.pc1.name="NAME_2.id", 
+                                         roi.pc1.name="NAME_3.id", 
                                          roi.pc2.name="NAME_2.id", 
                                          roi.pc3.name="NAME_1.id", 
                                          roi.pc4.name="NAME_1.id", 
                                          roi.pc5.name="NAME_1.id", 
                                          roi.pc6.name="NAME_0.id", 
-                                         aid.pc1.centroid.name="NAME_2.id")
+                                         aid.pc1.centroid.name="NAME_3.id")
+
+
+aidData=uga.aiddata 
+roiData=uga.adm 
+roi.prob.aid=uga.adm$area 
+dollar_set=uga.aiddata$total_commitments 
+aid.precision.code=uga.aiddata$precision_code 
+roi.pc1.name="NAME_3.id" 
+roi.pc2.name="NAME_2.id" 
+roi.pc3.name="NAME_1.id" 
+roi.pc4.name="NAME_1.id" 
+roi.pc5.name="NAME_1.id" 
+roi.pc6.name="NAME_0.id" 
+aid.pc1.centroid.name="NAME_3.id"
+
+
+
+
+
+
+
 
 ##### Run Naive Model #####
 naive_model <- lm(ncc4_2010e ~ expected_aid + gpw3_2000e, data=uga.adm)

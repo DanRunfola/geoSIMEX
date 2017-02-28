@@ -45,6 +45,7 @@ proj4string(uga.aiddata) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84
   # NOTE: Can typically use getData to get ADM info; however, issue with server where this comes 
   # from... so might be resolved later? Consequently, I'm importing from my local drive. And
   # exporting the resulting dataset to github.
+
 if(TRUE){
   setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/UGA_adm_shp")
   uga.3 <- readOGR(dsn = ".", layer = "UGA_adm3")
@@ -72,6 +73,7 @@ uga.aiddata$NAME_1 <- as.character(uga.aiddata$NAME_1)
 uga.aiddata$NAME_2 <- as.character(uga.aiddata$NAME_2)
 uga.aiddata$NAME_3 <- as.character(uga.aiddata$NAME_3)
 
+uga.adm3.df <- uga.adm
 uga.adm3.df$NAME_0 <- as.character(uga.adm3.df$NAME_0)
 uga.adm3.df$NAME_1 <- as.character(uga.adm3.df$NAME_1)
 uga.adm3.df$NAME_2 <- as.character(uga.adm3.df$NAME_2)
@@ -112,6 +114,9 @@ uga.adm3.df_IDS <- subset(uga.adm3.df, select=c(NAME_0, NAME_1, NAME_2, NAME_3_u
 uga.aiddata <- merge(uga.aiddata, uga.adm3.df_IDS, by=c("NAME_0", "NAME_1", "NAME_2", "NAME_3_unique"))
 uga.aiddata.reduced <- uga.aiddata
 
+uga.adm$area <- area(uga.3)
+
+write.csv(uga.adm, "~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/merge_uga_adm3.csv")
 write.csv(uga.adm3.df, "~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/merge_uga_adm3.csv")
 write.csv(uga.aiddata.reduced, "~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/uga_aiddata_gadm.csv")
 
