@@ -39,9 +39,9 @@ geoSIMEX_est <- function(model,
   #aid.pc1.centroid.name <- tail(sort(names(aidData)[grepl("ID_", names(aidData))]), n=1)
   
   ##### Subsetting ROI data
-  for(var in names(model$model)){
-    roiData <- roiData[!is.na(roiData[var]),]
-  }
+  #for(var in names(model$model)){
+  #  roiData <- roiData[!is.na(roiData[var]),]
+  #}
   
   ##### Creating Variables
   # Creating probability variable from area
@@ -49,17 +49,17 @@ geoSIMEX_est <- function(model,
   probAid <- as.matrix(roiData[roi.prob.aid] / sum(roiData[roi.prob.aid]))
   
   # Creating matrix of original precision codes
-  precision.code.original <- as.matrix(aidData[aid.precision.code])
+  precision.code.original <- aid.precision.code
   
   ##### Calculating Maximum Lambda Denominator #####
-  aidData[aid.precision.code] <- 6  
+  aid.precision.code <- rep(6,length(aid.precision.code))  
   param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAid_area, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)  
   param_set[param_set!=0] <- 1
   param_set <- param_set * as.matrix(roiData[roi.area])
   maxLambda_denom <- sum(colSums(param_set))
   
   ##### Calculate Naive Model and Naive Lambda #####
-  aidData[aid.precision.code] <- precision.code.original 
+  aid.precision.code <- precision.code.original 
   param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAid_area, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)  
   
   # Update aid variable
@@ -908,7 +908,7 @@ paramCol <- function(i, aidData=aidData, roiData=roiData, probAidAssume=probAidA
   
   # Getting information about aid project 
   aidDataPrj_Temp <- aidData[i,]
-  PC_temp <- as.numeric(aidDataPrj_Temp[aid.precision.code])
+  PC_temp <- aid.precision.code[i]
   
   # Getting information about subcounty & region that the aid project falls in
   subcounty_temp <- roiData[roiData[roi.pc1.name] == as.numeric(aidDataPrj_Temp[aid.pc1.centroid.name]),]
@@ -959,7 +959,7 @@ paramCol <- function(i, aidData=aidData, roiData=roiData, probAidAssume=probAidA
 paramSet <- function(aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name= roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name){
   param_set = as.data.frame(lapply(1:nrow(aidData), paramCol, aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name))
   
-  param_set.a = lapply(1:nrow(aidData), paramCol, aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
+  #param_set.a = lapply(1:nrow(aidData), paramCol, aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
   
   return(param_set) 
 }
@@ -990,33 +990,150 @@ geoSimulateError <- function(probIncPC, aidData=aidData, roiData=roiData, probAi
   names(results) <- c("lambda","aid.expected.coef")
   
   # Simulating Error
-  aidData[aid.precision.code] <- PC_researcherSees
+  aid.precision.code <- PC_researcherSees
   probStayPC <- 1 - probIncPC
   
-  # ... Precision Code 4s
-  aidData[aid.precision.code][aidData[aid.precision.code] == 4] <- sample(size=length(aidData[aid.precision.code][aidData[aid.precision.code] == 4]), 
-                                                                          x=c(4,6), 
-                                                                          prob=c(probStayPC,probIncPC), 
-                                                                          replace=TRUE)
-  # ... Precision Code 3s
-  aidData[aid.precision.code][aidData[aid.precision.code] == 3] <- sample(size=length(aidData[aid.precision.code][aidData[aid.precision.code] == 3]), 
-                                                                          x=c(3,4,6), 
-                                                                          prob=c(probStayPC,probIncPC/2,probIncPC/2), 
-                                                                          replace=TRUE)
+  ### Equal chance of increasing precision codes
+  uncertainty.level <- sample(1,x=c(0,1,2,3,4),prob=c(0.20,0.20,0.20,0.20,0.20))
   
-  # ... Precision Code 2s
-  aidData[aid.precision.code][aidData[aid.precision.code] == 2] <- sample(size=length(aidData[aid.precision.code][aidData[aid.precision.code] == 2]), 
-                                                                          x=c(2,3,4,6), 
-                                                                          prob=c(probStayPC,probIncPC/3,probIncPC/3,probIncPC/3), 
-                                                                          replace=TRUE)
-  
-  # ... Precision Code 1s
-  if(sim_pc1){
-    aidData[aid.precision.code][aidData[aid.precision.code] == 1] <- sample(size=length(aidData[aid.precision.code][aidData[aid.precision.code] == 1]), 
-                                                                            x=c(1,2,3,4,6), 
-                                                                            prob=c(probStayPC,probIncPC/4,probIncPC/4,probIncPC/4,probIncPC/4), 
+  if(uncertainty.level == 0){
+    # ... Precision Code 4s
+    aid.precision.code[aid.precision.code==4] <- sample(size=length(aid.precision.code[aid.precision.code==4]), 
+                                                                            x=c(4,6), 
+                                                                            prob=c(probStayPC,probIncPC), 
                                                                             replace=TRUE)
+    # ... Precision Code 3s
+    aid.precision.code[aid.precision.code==3] <- sample(size=length(aid.precision.code[aid.precision.code==3]), 
+                                                                            x=c(3,4,6), 
+                                                                            prob=c(probStayPC,probIncPC/2,probIncPC/2), 
+                                                                            replace=TRUE)
+    
+    # ... Precision Code 2s
+    aid.precision.code[aid.precision.code==2] <- sample(size=length(aid.precision.code[aid.precision.code==2]), 
+                                                                            x=c(2,3,4,6), 
+                                                                            prob=c(probStayPC,probIncPC/3,probIncPC/3,probIncPC/3), 
+                                                                            replace=TRUE)
+    
+    # ... Precision Code 1s
+    if(sim_pc1){
+      aid.precision.code[aid.precision.code==1] <- sample(size=length(aid.precision.code[aid.precision.code==1]), 
+                                                                              x=c(1,2,3,4,6), 
+                                                                              prob=c(probStayPC,probIncPC/4,probIncPC/4,probIncPC/4,probIncPC/4), 
+                                                                              replace=TRUE)
+    }
   }
+  
+  if(uncertainty.level == 1){
+    # ... Precision Code 4s
+    aid.precision.code[aid.precision.code==4] <- sample(size=length(aid.precision.code[aid.precision.code==4]), 
+                                                        x=c(4,6), 
+                                                        prob=c(probStayPC,probIncPC), 
+                                                        replace=TRUE)
+    # ... Precision Code 3s
+    aid.precision.code[aid.precision.code==3] <- sample(size=length(aid.precision.code[aid.precision.code==3]), 
+                                                        x=c(3,4,6), 
+                                                        prob=c(probStayPC,probIncPC/3,probIncPC/2), 
+                                                        replace=TRUE)
+    
+    # ... Precision Code 2s
+    aid.precision.code[aid.precision.code==2] <- sample(size=length(aid.precision.code[aid.precision.code==2]), 
+                                                        x=c(2,3,4,6), 
+                                                        prob=c(probStayPC,probIncPC/5,probIncPC/4,probIncPC/3), 
+                                                        replace=TRUE)
+    
+    # ... Precision Code 1s
+    if(sim_pc1){
+      aid.precision.code[aid.precision.code==1] <- sample(size=length(aid.precision.code[aid.precision.code==1]), 
+                                                          x=c(1,2,3,4,6), 
+                                                          prob=c(probStayPC,probIncPC/7,probIncPC/6,probIncPC/5,probIncPC/4), 
+                                                          replace=TRUE)
+    }
+  }
+  
+  if(uncertainty.level == 2){
+    # ... Precision Code 4s
+    aid.precision.code[aid.precision.code==4] <- sample(size=length(aid.precision.code[aid.precision.code==4]), 
+                                                        x=c(4,6), 
+                                                        prob=c(probStayPC/3,probIncPC), 
+                                                        replace=TRUE)
+    # ... Precision Code 3s
+    aid.precision.code[aid.precision.code==3] <- sample(size=length(aid.precision.code[aid.precision.code==3]), 
+                                                        x=c(3,4,6), 
+                                                        prob=c(probStayPC/3,probIncPC/2,probIncPC/1), 
+                                                        replace=TRUE)
+    
+    # ... Precision Code 2s
+    aid.precision.code[aid.precision.code==2] <- sample(size=length(aid.precision.code[aid.precision.code==2]), 
+                                                        x=c(2,3,4,6), 
+                                                        prob=c(probStayPC/3,probIncPC/5,probIncPC/2,probIncPC/1), 
+                                                        replace=TRUE)
+    
+    # ... Precision Code 1s
+    if(sim_pc1){
+      aid.precision.code[aid.precision.code==1] <- sample(size=length(aid.precision.code[aid.precision.code==1]), 
+                                                          x=c(1,2,3,4,6), 
+                                                          prob=c(probStayPC/3,probIncPC/7,probIncPC/6,probIncPC/2,probIncPC/1), 
+                                                          replace=TRUE)
+    }
+  }
+  
+  if(uncertainty.level == 3){
+    # ... Precision Code 4s
+    aid.precision.code[aid.precision.code==4] <- sample(size=length(aid.precision.code[aid.precision.code==4]), 
+                                                        x=c(4,6), 
+                                                        prob=c(probStayPC/15,probIncPC), 
+                                                        replace=TRUE)
+    # ... Precision Code 3s
+    aid.precision.code[aid.precision.code==3] <- sample(size=length(aid.precision.code[aid.precision.code==3]), 
+                                                        x=c(3,4,6), 
+                                                        prob=c(probStayPC/15,probIncPC/3,probIncPC/1), 
+                                                        replace=TRUE)
+    
+    # ... Precision Code 2s
+    aid.precision.code[aid.precision.code==2] <- sample(size=length(aid.precision.code[aid.precision.code==2]), 
+                                                        x=c(2,3,4,6), 
+                                                        prob=c(probStayPC/15,probIncPC/11,probIncPC/3,probIncPC/1), 
+                                                        replace=TRUE)
+    
+    # ... Precision Code 1s
+    if(sim_pc1){
+      aid.precision.code[aid.precision.code==1] <- sample(size=length(aid.precision.code[aid.precision.code==1]), 
+                                                          x=c(1,2,3,4,6), 
+                                                          prob=c(probStayPC/15,probIncPC/11,probIncPC/10,probIncPC/3,probIncPC/1), 
+                                                          replace=TRUE)
+    }
+  }
+  
+  if(uncertainty.level == 4){
+    # ... Precision Code 4s
+    aid.precision.code[aid.precision.code==4] <- sample(size=length(aid.precision.code[aid.precision.code==4]), 
+                                                        x=c(4,6), 
+                                                        prob=c(probStayPC/50,probIncPC), 
+                                                        replace=TRUE)
+    # ... Precision Code 3s
+    aid.precision.code[aid.precision.code==3] <- sample(size=length(aid.precision.code[aid.precision.code==3]), 
+                                                        x=c(3,4,6), 
+                                                        prob=c(probStayPC/50,probIncPC/5,probIncPC/1), 
+                                                        replace=TRUE)
+    
+    # ... Precision Code 2s
+    aid.precision.code[aid.precision.code==2] <- sample(size=length(aid.precision.code[aid.precision.code==2]), 
+                                                        x=c(2,3,4,6), 
+                                                        prob=c(probStayPC/50,probIncPC/20,probIncPC/5,probIncPC/1), 
+                                                        replace=TRUE)
+    
+    # ... Precision Code 1s
+    if(sim_pc1){
+      aid.precision.code[aid.precision.code==1] <- sample(size=length(aid.precision.code[aid.precision.code==1]), 
+                                                          x=c(1,2,3,4,6), 
+                                                          prob=c(probStayPC/50,probIncPC/25,probIncPC/20,probIncPC/5,probIncPC/1), 
+                                                          replace=TRUE)
+    }
+  }
+  
+  
+  
+  
   
   # Calculating paramSet
   param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)

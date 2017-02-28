@@ -9,6 +9,9 @@ uga.adm <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/E
 # Aid Project Level Data
 uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/uga_aiddata_gadm.csv")
 
+uga.aiddata <- uga.aiddata[uga.aiddata$ad_sector_names == "Government and civil society, general",]
+uga.aiddata <- uga.aiddata[uga.aiddata$transactions_start_year <= 2010,] 
+
 ##### Calculating Expected Amount of Aid in Each ADM #####
 uga.adm$expected_aid <- expected_aid_ROI(aidData=uga.aiddata, 
                                          roiData=uga.adm, 
@@ -23,25 +26,6 @@ uga.adm$expected_aid <- expected_aid_ROI(aidData=uga.aiddata,
                                          roi.pc6.name="NAME_0.id", 
                                          aid.pc1.centroid.name="NAME_3.id")
 
-aidData=uga.aiddata 
-roiData=uga.adm 
-roi.prob.aid=uga.adm$area 
-dollar_set=uga.aiddata$total_commitments 
-aid.precision.code=uga.aiddata$precision_code 
-roi.pc1.name="NAME_3.id" 
-roi.pc2.name="NAME_2.id" 
-roi.pc3.name="NAME_1.id" 
-roi.pc4.name="NAME_1.id" 
-roi.pc5.name="NAME_1.id" 
-roi.pc6.name="NAME_0.id" 
-aid.pc1.centroid.name="NAME_3.id"
-
-
-
-
-
-
-
 
 ##### Run Naive Model #####
 naive_model <- lm(ncc4_2010e ~ expected_aid + gpw3_2000e, data=uga.adm)
@@ -55,21 +39,22 @@ geoSIMEX_model <- geoSIMEX(model = naive_model,
                            roiData = uga.adm, 
                            aidData = uga.aiddata, 
                            aid.amount = "total_commitments",
-                           iterations = 500, 
-                           bins = 4, 
+                           iterations = 100, 
+                           bins = 6, 
                            roi.area = "area", 
                            roi.prob.aid = "area", 
-                           roi.pc1.name="NAME_2.id", 
+                           roi.pc1.name="NAME_3.id", 
                            roi.pc2.name="NAME_2.id", 
                            roi.pc3.name="NAME_1.id", 
                            roi.pc4.name="NAME_1.id", 
                            roi.pc5.name="NAME_1.id", 
                            roi.pc6.name="NAME_0.id", 
-                           aid.pc1.centroid.name="NAME_2.id", 
-                           aid.precision.code="precision_code",
+                           aid.pc1.centroid.name="NAME_3.id", 
+                           aid.precision.code=uga.aiddata$precision_code,
                            binary=FALSE,
                            sim_pc1=TRUE)
 
 # View Results
 summary(geoSIMEX_model)
 plot(geoSIMEX_model, variable = "expected_aid")
+
