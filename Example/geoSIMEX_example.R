@@ -115,6 +115,7 @@ uga.aiddata <- merge(uga.aiddata, uga.adm3.df_IDS, by=c("NAME_0", "NAME_1", "NAM
 uga.aiddata.reduced <- uga.aiddata
 
 uga.adm$area <- area(uga.3)
+uga.adm3.df$area <- area(uga.3)
 
 write.csv(uga.adm, "~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/merge_uga_adm3.csv")
 write.csv(uga.adm3.df, "~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/merge_uga_adm3.csv")
