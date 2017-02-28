@@ -101,16 +101,19 @@ table(uga.aiddata$NAME_1 %in% uga.adm3.df$NAME_1)
 
 ##### Converting ADM NAMES to IDs [change to work with strings!]
   # Basically, make what's happening here happen interally early on in geoSIMEX
-uga.adm3.df$NAME_3_unique.id <- as.numeric(as.factor(uga.adm3.df$NAME_3_unique))
+uga.adm3.df$NAME_3.id <- as.numeric(as.factor(uga.adm3.df$NAME_3_unique))
 uga.adm3.df$NAME_2.id <- as.numeric(as.factor(uga.adm3.df$NAME_2))
 uga.adm3.df$NAME_1.id <- as.numeric(as.factor(uga.adm3.df$NAME_1))
 uga.adm3.df$NAME_0.id <- as.numeric(as.factor(uga.adm3.df$NAME_0))
 
 uga.adm3.df_IDS <- subset(uga.adm3.df, select=c(NAME_0, NAME_1, NAME_2, NAME_3_unique,
-                                                NAME_0.id, NAME_1.id, NAME_2.id, NAME_3_unique.id))
+                                                NAME_0.id, NAME_1.id, NAME_2.id, NAME_3.id))
 
 uga.aiddata <- merge(uga.aiddata, uga.adm3.df_IDS, by=c("NAME_0", "NAME_1", "NAME_2", "NAME_3_unique"))
 uga.aiddata.reduced <- uga.aiddata
+
+write.csv(uga.adm3.df, "~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/merge_uga_adm3.csv")
+write.csv(uga.aiddata.reduced, "~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/Example/uga_aiddata_gadm.csv")
 
 # --- --- --- --- --- --- --- --- --- --- #
 ##### Analysis at ADM2 Level #####
