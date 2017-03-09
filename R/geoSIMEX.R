@@ -48,6 +48,9 @@ geoSIMEX_est <- function(model,
   probAid_area <- as.matrix(roiData[roi.area] / sum(roiData[roi.area]))
   probAid <- as.matrix(roiData[roi.prob.aid] / sum(roiData[roi.prob.aid]))
   
+  # Precision Code as list, not variable name
+  aid.precision.code=aidData[,aid.precision.code]
+      
   # Creating matrix of original precision codes
   precision.code.original <- aid.precision.code
   
@@ -338,13 +341,13 @@ geoSIMEX.default <- function(model,
                              fitting.method = "quadratic", 
                              roi.area="Shape_Area",  
                              roi.prob.aid="Shape_Area",
-                             roi.pc1.name="ID_3", 
-                             roi.pc2.name="ID_2", 
-                             roi.pc3.name="ID_1", 
-                             roi.pc4.name="ID_1", 
-                             roi.pc5.name="ID_1", 
-                             roi.pc6.name="ID_0",  
-                             aid.pc1.centroid.name="ID_3", 
+                             roi.pc1.name="NAME_3", 
+                             roi.pc2.name="NAME_2", 
+                             roi.pc3.name="NAME_1", 
+                             roi.pc4.name="NAME_1", 
+                             roi.pc5.name="NAME_1", 
+                             roi.pc6.name="NAME_0",  
+                             aid.pc1.centroid.name="NAME_3", 
                              aid.precision.code="precision_code",
                              binary=FALSE,
                              sim_pc1=TRUE,
@@ -1630,20 +1633,21 @@ subset.aiddata <- function(json){
   coordinates(geo.data) <- ~longitude+latitude
   proj4string(geo.data) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
   
-  #### Extracting GADM Data to Aid Data
+  #### Extracting GADM Data, that matches AidData 
   gadm <- getData('GADM', country=toupper(substr(json$boundary$name,1,3)), level=as.numeric(substr(json$boundary$name,8,8)))
   
   aiddata.gadm.over <- over(geo.data, gadm)
   
-  # Will need to adjust depending on how many adm zones using
-  geo.data$NAME_0 <- aiddata.gadm.over$NAME_0
-  geo.data$NAME_1 <- aiddata.gadm.over$NAME_1
-  geo.data$NAME_2 <- aiddata.gadm.over$NAME_2
-  geo.data$NAME_3 <- aiddata.gadm.over$NAME_3
-  geo.data$ID_0 <- aiddata.gadm.over$ID_0
-  geo.data$ID_1 <- aiddata.gadm.over$ID_1
-  geo.data$ID_2 <- aiddata.gadm.over$ID_2
-  geo.data$ID_3 <- aiddata.gadm.over$ID_3
+  #### Adding ADM Names to Aid Dataset 
+  
+  adm.level <- as.numeric(substr(json$boundary$name,8,8))
+  
+  for(i in 0:adm.level){
+    
+    geo.data[[paste("NAME_",i,sep="")]] <- aiddata.gadm.over[,paste("NAME_",i,sep="")]
+    geo.data[[paste("ID_",i,sep="")]] <- aiddata.gadm.over[,paste("ID_",i,sep="")]
+  }
+
   geo.data <- geo.data@data
   
   #### Subsetting by Filter

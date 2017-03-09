@@ -1,6 +1,6 @@
 # Installation
 #source("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/R/geoSIMEX.R")
-source("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/R/geoSIMEX_updating.R")
+source("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/R/geoSIMEX.R")
 
 ##### * Load Data * #####
 # ADM Level Data
@@ -39,7 +39,7 @@ geoSIMEX_model <- geoSIMEX(model = naive_model,
                            roiData = uga.adm, 
                            aidData = uga.aiddata, 
                            aid.amount = "total_commitments",
-                           iterations = 100, 
+                           iterations = 25, 
                            bins = 6, 
                            roi.area = "area", 
                            roi.prob.aid = "area", 
@@ -50,7 +50,7 @@ geoSIMEX_model <- geoSIMEX(model = naive_model,
                            roi.pc5.name="NAME_1.id", 
                            roi.pc6.name="NAME_0.id", 
                            aid.pc1.centroid.name="NAME_3.id", 
-                           aid.precision.code=uga.aiddata$precision_code,
+                           aid.precision.code="precision_code",
                            binary=FALSE,
                            sim_pc1=TRUE,
                            extrapolation="quadratic")
