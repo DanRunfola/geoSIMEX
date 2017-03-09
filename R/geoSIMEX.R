@@ -39,9 +39,9 @@ geoSIMEX_est <- function(model,
   aidData[,aid.pc1.centroid.name] <- as.character(aidData[,aid.pc1.centroid.name])
   
   ##### Subsetting ROI data
-  #for(var in names(model$model)){
-  #  roiData <- roiData[!is.na(roiData[var]),]
-  #}
+  for(var in names(model$model)){
+    roiData <- roiData[!is.na(roiData[var]),]
+  }
   
   ##### Creating Variables
   # Creating probability variable from area
@@ -74,7 +74,7 @@ geoSIMEX_est <- function(model,
   
   # Update Model
   df.temp <- model$model
-  df.temp[geoSIMEXvariable] <- roiData[geoSIMEXvariable]
+  df.temp[,geoSIMEXvariable] <- roiData[,geoSIMEXvariable]
   
   # Update Model
   model_naive <- update(model, data = df.temp)
@@ -336,7 +336,7 @@ geoSIMEX.default <- function(model,
                              roiData, 
                              aidData, 
                              aid.amount,
-                             iterations=500, 
+                             iterations=400, 
                              bins=4, 
                              fitting.method = "quadratic", 
                              roi.area="Shape_Area",  
@@ -926,43 +926,43 @@ paramCol <- function(i, aidData=aidData, roiData=roiData, probAidAssume=probAidA
   PC_temp <- aid.precision.code[i]
   
   # Getting information about subcounty & region that the aid project falls in
-  subcounty_temp <- roiData[roiData[roi.pc1.name] == as.numeric(aidDataPrj_Temp[aid.pc1.centroid.name]),]
+  subcounty_temp <- roiData[roiData[,roi.pc1.name] == aidDataPrj_Temp[,aid.pc1.centroid.name],]
   
   # Making temporary dataset that will merge into
   paramCol <- roiData
   paramCol$prj <- 0
   
   if(PC_temp == 1){
-    paramCol$prj[paramCol[roi.pc1.name] == as.numeric(subcounty_temp[roi.pc1.name])] <- 1
+    paramCol$prj[paramCol[roi.pc1.name] == subcounty_temp[,roi.pc1.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
   if(PC_temp == 2){
-    paramCol$prj[paramCol[roi.pc2.name] == as.numeric(subcounty_temp[roi.pc2.name])] <- 1
+    paramCol$prj[paramCol[roi.pc2.name] == subcounty_temp[,roi.pc2.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
   if(PC_temp == 3){
-    paramCol$prj[paramCol[roi.pc3.name] == as.numeric(subcounty_temp[roi.pc3.name])] <- 1
+    paramCol$prj[paramCol[roi.pc3.name] == subcounty_temp[,roi.pc3.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
   if(PC_temp == 4){
-    paramCol$prj[paramCol[roi.pc4.name] == as.numeric(subcounty_temp[roi.pc4.name])] <- 1
+    paramCol$prj[paramCol[roi.pc4.name] == subcounty_temp[,roi.pc4.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
   if((PC_temp == 6) | (PC_temp == 8)){
-    paramCol$prj[paramCol[roi.pc6.name] == as.numeric(subcounty_temp[roi.pc6.name])] <- 1
+    paramCol$prj[paramCol[roi.pc6.name] == subcounty_temp[,roi.pc6.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
-  row.names(paramCol) <- as.matrix(paramCol[roi.pc1.name])
+  row.names(paramCol) <- paramCol[,roi.pc1.name]
   
   paramCol_return <- as.data.frame(paramCol$prj)
   row.names(paramCol_return) <- row.names(paramCol)
