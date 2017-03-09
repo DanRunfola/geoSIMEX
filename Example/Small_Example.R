@@ -2,17 +2,18 @@
 #source("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/R/geoSIMEX.R")
 source("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/R/geoSIMEX_updating.R")
 
-##### Load Data #####
+##### * Load Data * #####
 # ADM Level Data
 uga.adm <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/merge_uga_adm3.csv")
 
 # Aid Project Level Data
 uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/uga_aiddata_gadm.csv")
 
+##### * Subsetting Aid Data * #####
 uga.aiddata <- uga.aiddata[uga.aiddata$ad_sector_names == "Government and civil society, general",]
 uga.aiddata <- uga.aiddata[uga.aiddata$transactions_start_year <= 2010,] 
 
-##### Calculating Expected Amount of Aid in Each ADM #####
+##### * Calculating Expected Amount of Aid in Each ADM * #####
 uga.adm$expected_aid <- expected_aid_ROI(aidData=uga.aiddata, 
                                          roiData=uga.adm, 
                                          roi.prob.aid=uga.adm$area, 
@@ -26,14 +27,13 @@ uga.adm$expected_aid <- expected_aid_ROI(aidData=uga.aiddata,
                                          roi.pc6.name="NAME_0.id", 
                                          aid.pc1.centroid.name="NAME_3.id")
 
-
-##### Run Naive Model #####
+##### * Run Naive Model * #####
 naive_model <- lm(ncc4_2010e ~ expected_aid + gpw3_2000e, data=uga.adm)
 
 # View Results
 summary(naive_model)
 
-##### Run geoSIMEX Model #####
+##### * Run geoSIMEX Model * #####
 geoSIMEX_model <- geoSIMEX(model = naive_model, 
                            geoSIMEXvariable = "expected_aid", 
                            roiData = uga.adm, 
@@ -52,9 +52,18 @@ geoSIMEX_model <- geoSIMEX(model = naive_model,
                            aid.pc1.centroid.name="NAME_3.id", 
                            aid.precision.code=uga.aiddata$precision_code,
                            binary=FALSE,
-                           sim_pc1=TRUE)
+                           sim_pc1=TRUE,
+                           extrapolation="quadratic")
 
 # View Results
 summary(geoSIMEX_model)
 plot(geoSIMEX_model, variable = "expected_aid")
+
+
+
+
+
+
+
+
 
