@@ -7,9 +7,11 @@ geoSIMEX_est <- function(model,
                          geoSIMEXvariable, 
                          roiData, 
                          aidData, 
-                         aid.amount,
+                         aid.project.amount,
                          iterations, 
-                         bins, 
+                         bins,
+                         number.from.bin,
+                         number.from.bin.average,
                          fitting.method, 
                          roi.area,  
                          roi.prob.aid,
@@ -69,7 +71,7 @@ geoSIMEX_est <- function(model,
   if(binary){
     roiData[geoSIMEXvariable] <- prob_aid(param_set=param_set)
   } else{
-    roiData[geoSIMEXvariable] <- dollar_expected_value(param_set=param_set, dollar_set=as.matrix(aidData[aid.amount]))
+    roiData[geoSIMEXvariable] <- dollar_expected_value(param_set=param_set, aid.project.amount=as.matrix(aidData[aid.project.amount]))
   }
   
   # Update Model
@@ -102,12 +104,12 @@ geoSIMEX_est <- function(model,
                                        roi.pc5.name=roi.pc5.name, 
                                        roi.pc6.name=roi.pc6.name, 
                                        aid.pc1.centroid.name=aid.pc1.centroid.name,
-                                       aid.amount=aid.amount,
+                                       aid.project.amount=aid.project.amount,
                                        model=model,
                                        geoSIMEXvariable=geoSIMEXvariable,
                                        binary=binary,
                                        sim_pc1=sim_pc1,
-                                       mc.cores=2)
+                                       mc.cores=mc.cores)
   
   geoSimulateError.results.df <- matrix(NA, ncol=ncol(geoSimulateError.results[[1]][["model.SIMEX.coefs"]]),nrow=0)
   geoSimulateError.results.df <- as.data.frame(geoSimulateError.results.df)
@@ -169,14 +171,15 @@ geoSIMEX_est <- function(model,
   
   geoSimulateError.results.df$lambda_sq <- geoSimulateError.results.df$lambda^2
   geoSimulateError.results.df.se$lambda_sq <- geoSimulateError.results.df.se$lambda^2
-  
+    
   bootIter.list <- mclapply(seq(1:numberBootIter), bootIter, 
                             geoSimulateError.results.df=geoSimulateError.results.df, 
                             geoSimulateError.results.df.se=geoSimulateError.results.df.se,
                             bins=bins, 
-                            numFromBin=1,
-                            mc.cores=2,
-                            extrapolation=extrapolation)
+                            number.from.bin=number.from.bin,
+                            mc.cores=mc.cores,
+                            extrapolation=extrapolation,
+                            number.from.bin.average=number.from.bin.average)
   
   boot.coefs.matrix <- as.data.frame(matrix(NA, nrow=0, ncol=ncol(bootIter.list[[1]]$coefs.geoSIMEX.boot)))
   boot.se.matrix <- as.data.frame(matrix(NA, nrow=0, ncol=ncol(bootIter.list[[1]]$se.geoSIMEX.boot)))
@@ -209,7 +212,6 @@ geoSIMEX_est <- function(model,
   
   #sqrt(model.var + var.imprecision)
   #se.geoSIMEX
-  
   
   ##### Collecting Results #####
   row.names(coef.geoSIMEX) <- "Coefficients"
@@ -252,7 +254,7 @@ geoSIMEX_est <- function(model,
 # AidData's data extraction tool.
 # 
 # @usage
-# geoSIMEX(model, geoSIMEXvariable, roiData, aidData, aid.amount, 
+# geoSIMEX(model, geoSIMEXvariable, roiData, aidData, aid.project.amount, 
 # iterations=500, bins=3, fitting.method = "quadratic", roi.area="area",  
 # roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", 
 # roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc5.name="pc6.id",  
@@ -263,7 +265,7 @@ geoSIMEX_est <- function(model,
 # @param SIMEXvariable character containing the name of the variable with spatial uncertainty
 # @param roiData name of dataframe of ROI data 
 # @param aidData name of dataframe of aid project data
-# @param aid.amount character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.
+# @param aid.project.amount character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.
 # @param iterations number of simulated error iterations
 # @param bins number of bins to group coefficients
 # @param fitting.method fitting method for the extrapolation. linear and quadratic are implemented.
@@ -305,7 +307,7 @@ geoSIMEX_est <- function(model,
 # aidData$precision.code <- 1
 # 
 # # Adding True Aid to Country Dataset
-# countryData$aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, dollar_set=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
+# countryData$aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, aid.project.amount=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
 # 
 # # Defining True Relation Between Aid and Wealth
 # countryData$wealth <- countryData$aid + rnorm(120) * 0.1
@@ -315,7 +317,7 @@ geoSIMEX_est <- function(model,
 # aidData$precision.code <- sample(size=100, x=c(1,2,3,4,6), prob=rep(1/5, 5), replace=TRUE)
 # 
 # # Calculating Expected Aid and Running Naive Model
-# countryData$Expected.Aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, dollar_set=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
+# countryData$Expected.Aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, aid.project.amount=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
 # 
 # lm_naive <- lm(wealth ~ Expected.Aid, data=countryData)
 # 
@@ -324,7 +326,7 @@ geoSIMEX_est <- function(model,
 #                         geoSIMEXvariable = "Expected.Aid", 
 #                         roiData = countryData, 
 #                         aidData = aidData, 
-#                         aid.amount = "disbursement")
+#                         aid.project.amount = "disbursement")
 # 
 # summary(lm_geoSIMEX)
 # plot(lm_geoSIMEX, variable="Expected.Aid") 
@@ -335,9 +337,11 @@ geoSIMEX.default <- function(model,
                              geoSIMEXvariable, 
                              roiData, 
                              aidData, 
-                             aid.amount,
-                             iterations=400, 
+                             aid.project.amount,
+                             iterations=500, 
                              bins=4, 
+                             number.from.bin=1,
+                             number.from.bin.average=TRUE,
                              fitting.method = "quadratic", 
                              roi.area="Shape_Area",  
                              roi.prob.aid="Shape_Area",
@@ -353,15 +357,17 @@ geoSIMEX.default <- function(model,
                              sim_pc1=TRUE,
                              parallel=TRUE, 
                              extrapolation="quadratic",
-                             mc.cores=2){
+                             mc.cores=1){
   
   est <- geoSIMEX_est(model=model, 
                       geoSIMEXvariable=geoSIMEXvariable, 
                       roiData=roiData, 
                       aidData=aidData, 
-                      aid.amount=aid.amount,
+                      aid.project.amount=aid.project.amount,
                       iterations=iterations, 
                       bins=bins, 
+                      number.from.bin=number.from.bin,
+                      number.from.bin.average=number.from.bin.average,
                       fitting.method = fitting.method, 
                       roi.area=roi.area, 
                       roi.prob.aid=roi.prob.aid,
@@ -536,7 +542,7 @@ modelAverageRandProb_est <- function(iterations,
                                      geoSIMEXvariable, 
                                      roiData, 
                                      aidData, 
-                                     aid.amount, 
+                                     aid.project.amount, 
                                      roi.pc1.name, 
                                      roi.pc2.name, 
                                      roi.pc3.name, 
@@ -549,10 +555,12 @@ modelAverageRandProb_est <- function(iterations,
                                      parallel, 
                                      mc.cores){
   
+  aid.precision.code <- aidData[[aid.precision.code]]
+  
   param_set <- paramSet(aidData=aidData, roiData=roiData, probAidAssume=runif(nrow(roiData)), aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name= roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
   param_set.bin <- (param_set > 0)*1
   
-  model.list <- mclapply(1:iterations, model_rand_prob, param_set.bin=param_set.bin, aidData=aidData, roiData=roiData, aid.amount=aid.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary)
+  model.list <- mclapply(1:iterations, model_rand_prob, param_set.bin=param_set.bin, aidData=aidData, roiData=roiData, aid.project.amount=aid.project.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary)
   
   coef.df <- model.list[[1]]$model.SIMEX.coefs
   se.df <- model.list[[1]]$model.SIMEX.se
@@ -590,7 +598,7 @@ modelAverageRandProb.default <- function(iterations=500,
                                          geoSIMEXvariable,
                                          roiData, 
                                          aidData,
-                                         aid.amount, 
+                                         aid.project.amount, 
                                          roi.pc1.name="pc1.id", 
                                          roi.pc2.name="pc2.id", 
                                          roi.pc3.name="pc3.id", 
@@ -601,14 +609,14 @@ modelAverageRandProb.default <- function(iterations=500,
                                          aid.precision.code="precision.code",
                                          binary=FALSE,
                                          parallel=TRUE, 
-                                         mc.cores=2){
+                                         mc.cores=1){
   
   est <- modelAverageRandProb_est(iterations=iterations, 
                                   model=model,
                                   geoSIMEXvariable=geoSIMEXvariable,
                                   roiData=roiData, 
                                   aidData=aidData,
-                                  aid.amount=aid.amount, 
+                                  aid.project.amount=aid.project.amount, 
                                   roi.pc1.name=roi.pc1.name, 
                                   roi.pc2.name=roi.pc2.name, 
                                   roi.pc3.name=roi.pc3.name, 
@@ -674,7 +682,7 @@ modelAverageRandROI_est <- function(iterations,
                                     aidData, 
                                     roiData, 
                                     roi.area, 
-                                    aid.amount, 
+                                    aid.project.amount, 
                                     model, 
                                     geoSIMEXvariable, 
                                     binary, 
@@ -690,7 +698,7 @@ modelAverageRandROI_est <- function(iterations,
   # Calculating paramSet
   param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=roiData[,roi.area], aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
   
-  model.list <- lapply(1:iterations, geoSimulate_realization, param_set=param_set, roiData=roiData, aid.amount=aid.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary, aidData=aidData)
+  model.list <- lapply(1:iterations, geoSimulate_realization, param_set=param_set, roiData=roiData, aid.project.amount=aid.project.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary, aidData=aidData)
   
   coef.df <- model.list[[1]]$model.SIMEX.coefs
   se.df <- model.list[[1]]$model.SIMEX.se
@@ -727,7 +735,7 @@ modelAverageRandROI.default <- function(iterations=500,
                                         aidData, 
                                         roiData, 
                                         roi.area, 
-                                        aid.amount, 
+                                        aid.project.amount, 
                                         model, 
                                         geoSIMEXvariable, 
                                         binary=FALSE, 
@@ -744,7 +752,7 @@ modelAverageRandROI.default <- function(iterations=500,
                                  aidData=aidData, 
                                  roiData=roiData, 
                                  roi.area=roi.area, 
-                                 aid.amount=aid.amount, 
+                                 aid.project.amount=aid.project.amount, 
                                  model=model, 
                                  geoSIMEXvariable=geoSIMEXvariable, 
                                  binary=binary, 
@@ -814,11 +822,11 @@ print.summary.modelAverageRandROI <- function(x, ...){
 # \code{expected_aid_ROI} Calculates expected value of aid.
 # 
 # @usage
-# expected_aid_ROI(aidData, roiData, probAidAssume, dollar_set, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
+# expected_aid_ROI(aidData, roiData, probAidAssume, aid.project.amount, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
 #  
 # @param roiData name of dataframe of ROI data 
 # @param aidData name of dataframe of aid project data
-# @param aid.amount character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.
+# @param aid.project.amount character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.
 # @param roi.area character containing the name of the variable in the ROI dataset which contains areas of ROIs. "area" is the default name in datasets produced by AidData's data extraction tool
 # @param roi.pc1.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
 # @param roi.pc2.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc2.id" is the default name in datasets produced by AidData's data extraction tool
@@ -829,16 +837,18 @@ print.summary.modelAverageRandROI <- function(x, ...){
 # @param aid.precision.code character containing the name of the variable in the aidData dataset which contains precision codes for each project. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
 #  
 # @note The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website].
-expected_aid_ROI <- function(aidData, roiData, roi.prob.aid, dollar_set, aid.precision.code, roi.pc1.name="ID_3", roi.pc2.name="ID_2", roi.pc3.name="ID_1", roi.pc4.name="ID_1", roi.pc5.name="ID_1", roi.pc6.name="ID_0", aid.pc1.centroid.name="ID_3"){
-  probAid_area <- as.matrix(roi.prob.aid / sum(roi.prob.aid))
-  dollar_set_values <- as.matrix(dollar_set)
+expected_aid_ROI <- function(aidData, roiData, roi.prob.aid, aid.project.amount, aid.precision.code, roi.pc1.name="ID_3", roi.pc2.name="ID_2", roi.pc3.name="ID_1", roi.pc4.name="ID_1", roi.pc5.name="ID_1", roi.pc6.name="ID_0", aid.pc1.centroid.name="ID_3"){
+
+  aid.precision.code <- aidData[,aid.precision.code]   
+  probAid_area <- as.matrix(roiData[,roi.prob.aid] / sum(roiData[,roi.prob.aid]))
+  dollar_set_values <- aidData[,aid.project.amount]
   
   param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAid_area, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
-  aid <- dollar_expected_value(param_set=param_set, dollar_set=dollar_set_values)
+  aid <- dollar_expected_value(param_set=param_set, aid.project.amount=dollar_set_values)
   return(aid)
 }
 
-prob_aid_ROI <- function(aidData, roiData, probAidAssume, dollar_set, aid.precision.code, roi.pc1.name, roi.pc2.name, roi.pc3.name, roi.pc4.name, roi.pc5.name, roi.pc6.name, aid.pc1.centroid.name){
+prob_aid_ROI <- function(aidData, roiData, probAidAssume, aid.project.amount, aid.precision.code, roi.pc1.name, roi.pc2.name, roi.pc3.name, roi.pc4.name, roi.pc5.name, roi.pc6.name, aid.pc1.centroid.name){
   param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
   param_set_probNoAid <- 1 - param_set
   prob.0.prjs <- apply(param_set_probNoAid, 1, function(x) prod(x))
@@ -861,7 +871,7 @@ prob_aid_ROI <- function(aidData, roiData, probAidAssume, dollar_set, aid.precis
 #  
 # @param roiData name of dataframe of ROI data 
 # @param aidData name of dataframe of aid project data
-# @param aid.amount character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.
+# @param aid.project.amount character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.
 # @param roi.area character containing the name of the variable in the ROI dataset which contains areas of ROIs. "area" is the default name in datasets produced by AidData's data extraction tool
 # @param roi.pc1.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
 # @param roi.pc2.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc2.id" is the default name in datasets produced by AidData's data extraction tool
@@ -933,31 +943,31 @@ paramCol <- function(i, aidData=aidData, roiData=roiData, probAidAssume=probAidA
   paramCol$prj <- 0
   
   if(PC_temp == 1){
-    paramCol$prj[paramCol[roi.pc1.name] == subcounty_temp[,roi.pc1.name]] <- 1
+    paramCol$prj[paramCol[,roi.pc1.name] == subcounty_temp[,roi.pc1.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
   if(PC_temp == 2){
-    paramCol$prj[paramCol[roi.pc2.name] == subcounty_temp[,roi.pc2.name]] <- 1
+    paramCol$prj[paramCol[,roi.pc2.name] == subcounty_temp[,roi.pc2.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
   if(PC_temp == 3){
-    paramCol$prj[paramCol[roi.pc3.name] == subcounty_temp[,roi.pc3.name]] <- 1
+    paramCol$prj[paramCol[,roi.pc3.name] == subcounty_temp[,roi.pc3.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
   if(PC_temp == 4){
-    paramCol$prj[paramCol[roi.pc4.name] == subcounty_temp[,roi.pc4.name]] <- 1
+    paramCol$prj[paramCol[,roi.pc4.name] == subcounty_temp[,roi.pc4.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
   if((PC_temp == 6) | (PC_temp == 8)){
-    paramCol$prj[paramCol[roi.pc6.name] == subcounty_temp[,roi.pc6.name]] <- 1
+    paramCol$prj[paramCol[,roi.pc6.name] == subcounty_temp[,roi.pc6.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
@@ -979,9 +989,9 @@ paramSet <- function(aidData=aidData, roiData=roiData, probAidAssume=probAidAssu
   return(param_set) 
 }
 
-dollar_expected_value <- function(param_set, dollar_set){    
-  dollar_set[is.na(dollar_set)] <- 0
-  paramDollars <- lapply(1:length(dollar_set), function(i) param_set[,i] * dollar_set[i])
+dollar_expected_value <- function(param_set, aid.project.amount){    
+  aid.project.amount[is.na(aid.project.amount)] <- 0
+  paramDollars <- lapply(1:length(aid.project.amount), function(i) param_set[,i] * aid.project.amount[i])
   paramDollars <- as.data.frame(paramDollars)
   dollars_expected <- rowSums(paramDollars)
   return(dollars_expected)
@@ -997,7 +1007,7 @@ prob_aid <- function(param_set){
   return(prob.atLeast1.prjs)
 }
 
-geoSimulateError <- function(probIncPC, aidData=aidData, roiData=roiData, probAidAssume=probAid, PC_researcherSees=precision.code.original, maxLambda_denom=maxLambda_denom, roi.area=roi.area, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name, aid.amount=aid.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary, sim_pc1=sim_pc1){
+geoSimulateError <- function(probIncPC, aidData=aidData, roiData=roiData, probAidAssume=probAid, PC_researcherSees=precision.code.original, maxLambda_denom=maxLambda_denom, roi.area=roi.area, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name, aid.project.amount=aid.project.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary, sim_pc1=sim_pc1){
   
   # Initializing Results Matrix
   results <- matrix(NA, ncol=2,nrow=1)
@@ -1157,7 +1167,7 @@ geoSimulateError <- function(probIncPC, aidData=aidData, roiData=roiData, probAi
   if(binary){
     roiData[geoSIMEXvariable] <- prob_aid(param_set=param_set)
   } else{
-    roiData[geoSIMEXvariable] <- dollar_expected_value(param_set=param_set, dollar_set=as.matrix(aidData[aid.amount]))
+    roiData[geoSIMEXvariable] <- dollar_expected_value(param_set=param_set, aid.project.amount=as.matrix(aidData[aid.project.amount]))
   }
   
   # Update Model
@@ -1301,7 +1311,7 @@ geoSimulateError2 <- function(iter, aidData_1, aidData_2, roiData, probAidAssume
 }
 
 
-bootIter <- function(i, geoSimulateError.results.df, geoSimulateError.results.df.se, bins, numFromBin, extrapolation){
+bootIter <- function(i, geoSimulateError.results.df, geoSimulateError.results.df.se, bins, number.from.bin, extrapolation, number.from.bin.average){
   
   geoSimulateError.results.df$rand <- runif(nrow(geoSimulateError.results.df))
   geoSimulateError.results.df.se$rand <- geoSimulateError.results.df$rand
@@ -1333,12 +1343,29 @@ bootIter <- function(i, geoSimulateError.results.df, geoSimulateError.results.df
   numIter <- (maxLambda - minLambda) / binSize
   for(i in 1:ceiling(numIter)){
     
-    results.boot <- rbind(results.boot, geoSimulateError.results.df[(geoSimulateError.results.df$lambda >= binSize_lb) & (geoSimulateError.results.df$lambda <= binSize_ub),][1:numFromBin,])
-    results.boot.se <- rbind(results.boot.se, geoSimulateError.results.df.se[(geoSimulateError.results.df.se$lambda >= binSize_lb) & (geoSimulateError.results.df.se$lambda <= binSize_ub),][1:numFromBin,])
+    results.boot <- rbind(results.boot, geoSimulateError.results.df[(geoSimulateError.results.df$lambda >= binSize_lb) & (geoSimulateError.results.df$lambda <= binSize_ub),][1:number.from.bin,])
+    results.boot.se <- rbind(results.boot.se, geoSimulateError.results.df.se[(geoSimulateError.results.df.se$lambda >= binSize_lb) & (geoSimulateError.results.df.se$lambda <= binSize_ub),][1:number.from.bin,])
     
     binSize_lb <- binSize_lb + binSize
     binSize_ub <- binSize_ub + binSize 
   }
+  
+  # Summarizing by Bins
+  results.boot$bin <- rep(1:bins,each=number.from.bin)
+  results.boot.se$bin <- rep(1:bins,each=number.from.bin)
+  
+  # Removing NAs
+  results.boot <- results.boot[!is.na(results.boot$rand),]
+  results.boot.se <- results.boot.se[!is.na(results.boot.se$rand),]
+  
+  # Take Means
+  if(number.from.bin.average){
+    results.boot <- aggregate(. ~ bin, results.boot, mean)
+    results.boot.se <- aggregate(. ~ bin, results.boot.se, mean)
+  }
+  
+  results.boot <- subset(results.boot, select = -c(bin))
+  results.boot.se <- subset(results.boot.se, select = -c(bin))
   
   # Extrapolating 
   numVars <- ncol(results.boot) - 3
@@ -1452,13 +1479,13 @@ bootIter2 <- function(i, geoSimulateError.results.df, geoSimulateError.results.d
 # Model Averaging Change Probability 
 
 
-model_rand_prob <- function(j, param_set.bin=param_set.bin, aidData=aidData, roiData=roiData, aid.amount=aid.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary){
+model_rand_prob <- function(j, param_set.bin=param_set.bin, aidData=aidData, roiData=roiData, aid.project.amount=aid.project.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary){
   
   # Update aid variable
   if(binary){
     # WILL NEED THE RANDOMLY GENERATING PARAM SET HERE!
   } else{
-    roiData[geoSIMEXvariable] <- dollar_expected_value_randProb(param_set.bin=param_set.bin, dollar_set=as.matrix(aidData[aid.amount]))
+    roiData[geoSIMEXvariable] <- dollar_expected_value_randProb(param_set.bin=param_set.bin, aid.project.amount=as.matrix(aidData[aid.project.amount]))
   }
   
   # Update Model
@@ -1534,7 +1561,7 @@ model_rand_prob2 <- function(j,
 
 
 
-dollar_expected_value_randProb <- function(j, param_set.bin, dollar_set){
+dollar_expected_value_randProb <- function(j, param_set.bin, aid.project.amount){
   
   dist.type <- sample(1,x=c(1,2),prob=c(1,1))
   if(dist.type==1){
@@ -1548,25 +1575,25 @@ dollar_expected_value_randProb <- function(j, param_set.bin, dollar_set){
   param_set.bin <- param_set.bin*probAidGuess.current
   param_set.bin.colsums <- colSums(param_set.bin)
   
-  paramDollars <- lapply(1:length(dollar_set), function(i) param_set.bin[,i] / param_set.bin.colsums[i])
+  paramDollars <- lapply(1:length(aid.project.amount), function(i) param_set.bin[,i] / param_set.bin.colsums[i])
   paramDollars <- as.data.frame(paramDollars)
   
-  paramDollars <- lapply(1:length(dollar_set), function(i) paramDollars[,i] * dollar_set[i])
+  paramDollars <- lapply(1:length(aid.project.amount), function(i) paramDollars[,i] * aid.project.amount[i])
   paramDollars <- as.data.frame(paramDollars)
   
   return(rowSums(paramDollars))
 }
 
 
-geoSimulate_realization <- function(j, param_set=param_set, roiData=roiData, aid.amount=aid.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary, aidData=aidData){
+geoSimulate_realization <- function(j, param_set=param_set, roiData=roiData, aid.project.amount=aid.project.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary, aidData=aidData){
   
   # Update aid variable
   if(binary){
-    temp.var <- realization_of_aid(param_set=param_set, dollar_set=as.matrix(aidData[aid.amount]))
+    temp.var <- realization_of_aid(param_set=param_set, aid.project.amount=as.matrix(aidData[aid.project.amount]))
     temp.var[temp.var > 0] <- 1
     roiData[geoSIMEXvariable] <- temp.var
   } else{
-    roiData[geoSIMEXvariable] <- realization_of_aid(param_set=param_set, dollar_set=as.matrix(aidData[aid.amount]))
+    roiData[geoSIMEXvariable] <- realization_of_aid(param_set=param_set, aid.project.amount=as.matrix(aidData[aid.project.amount]))
   }
   
   # Update Model
@@ -1590,18 +1617,18 @@ geoSimulate_realization <- function(j, param_set=param_set, roiData=roiData, aid
               model.SIMEX.se=model.SIMEX.se))
 }
 
-realization_of_aid <- function(param_set, dollar_set){
+realization_of_aid <- function(param_set, aid.project.amount){
   
-  param_set_1pjrPerROI <- function(i, param_set=param_set, dollar_set=dollar_set){
+  param_set_1pjrPerROI <- function(i, param_set=param_set, aid.project.amount=aid.project.amount){
     id <- sample(size=1,x=1:length(param_set[,i]), prob=param_set[,i])
     col.temp <- as.data.frame(matrix(0,nrow=length(param_set[,i]), ncol=1))
     col.temp[id,1] <- 1
     return(col.temp)
   }
   
-  param_set_realization <- as.data.frame(lapply(1:ncol(param_set), param_set_1pjrPerROI, param_set=param_set, dollar_set=dollar_set))
+  param_set_realization <- as.data.frame(lapply(1:ncol(param_set), param_set_1pjrPerROI, param_set=param_set, aid.project.amount=aid.project.amount))
   
-  paramDollars <- lapply(1:length(dollar_set), function(i) param_set_realization[,i] * dollar_set[i])
+  paramDollars <- lapply(1:length(aid.project.amount), function(i) param_set_realization[,i] * aid.project.amount[i])
   paramDollars <- as.data.frame(paramDollars)
   dollars_realization <- rowSums(paramDollars)
   return(dollars_realization)
@@ -1614,7 +1641,10 @@ subset.aiddata <- function(json){
   #### Import Dataset
   # Eventually all datasets will be imported into R, so can just use this.
   #geo.data <- eval(parse(text=as.character(json$release_data[5])))
-  
+  # https://github.com/chrisalbon/code_r/blob/master/download-and-unzip-data.r
+  # http://stackoverflow.com/questions/23899525/using-r-to-download-zipped-data-file-extract-and-import-csv  
+  # http://stackoverflow.com/questions/32647779/r-download-and-unzip-file-to-store-in-data-frame
+    
   # For now, have all the datasets loaded on github; will pull from there. So get name and use for-loops   
   geo.data.name <- json$release_data$dataset
   
@@ -1625,6 +1655,7 @@ subset.aiddata <- function(json){
   if(geo.data.name == "ugandaaims_geocodedresearchrelease_level1_v1_4_1"){
     geo.data <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv") 
   }
+  
   
   # Merging GADM names to data  
   geo.data$latitude[is.na(geo.data$latitude)] <- geo.data$latitude[!is.na(geo.data$latitude)][1]

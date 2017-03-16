@@ -16,9 +16,9 @@ uga.aiddata <- uga.aiddata[uga.aiddata$transactions_start_year <= 2010,]
 ##### * Calculating Expected Amount of Aid in Each ADM * #####
 uga.adm$expected_aid <- expected_aid_ROI(aidData=uga.aiddata, 
                                          roiData=uga.adm, 
-                                         roi.prob.aid=uga.adm$area, 
-                                         dollar_set=uga.aiddata$total_commitments, 
-                                         aid.precision.code=uga.aiddata$precision_code, 
+                                         roi.prob.aid="area", 
+                                         dollar_set="total_commitments", 
+                                         aid.precision.code="precision_code", 
                                          roi.pc1.name="NAME_3.id", 
                                          roi.pc2.name="NAME_2.id", 
                                          roi.pc3.name="NAME_1.id", 
@@ -61,6 +61,27 @@ plot(geoSIMEX_model, variable = "expected_aid")
 
 
 
+model = naive_model 
+geoSIMEXvariable = "expected_aid" 
+roiData = uga.adm 
+aidData = uga.aiddata 
+aid.amount = "total_commitments"
+iterations = 25 
+bins = 6 
+number.from.bin=2
+roi.area = "area" 
+roi.prob.aid = "area" 
+roi.pc1.name="NAME_3.id" 
+roi.pc2.name="NAME_2.id" 
+roi.pc3.name="NAME_1.id" 
+roi.pc4.name="NAME_1.id" 
+roi.pc5.name="NAME_1.id" 
+roi.pc6.name="NAME_0.id" 
+aid.pc1.centroid.name="NAME_3.id" 
+aid.precision.code="precision_code"
+binary=FALSE
+sim_pc1=TRUE
+extrapolation="quadratic"
 
 
 
