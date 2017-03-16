@@ -17,7 +17,7 @@ uga.aiddata <- uga.aiddata[uga.aiddata$transactions_start_year <= 2010,]
 uga.adm$expected_aid <- expected_aid_ROI(aidData=uga.aiddata, 
                                          roiData=uga.adm, 
                                          roi.prob.aid="area", 
-                                         dollar_set="total_commitments", 
+                                         aid.project.amount="total_commitments", 
                                          aid.precision.code="precision_code", 
                                          roi.pc1.name="NAME_3.id", 
                                          roi.pc2.name="NAME_2.id", 
@@ -38,9 +38,9 @@ geoSIMEX_model <- geoSIMEX(model = naive_model,
                            geoSIMEXvariable = "expected_aid", 
                            roiData = uga.adm, 
                            aidData = uga.aiddata, 
-                           aid.amount = "total_commitments",
-                           iterations = 25, 
-                           bins = 6, 
+                           aid.project.amount = "total_commitments",
+                           iterations = 400,
+                           bins=4,
                            roi.area = "area", 
                            roi.prob.aid = "area", 
                            roi.pc1.name="NAME_3.id", 
@@ -50,10 +50,7 @@ geoSIMEX_model <- geoSIMEX(model = naive_model,
                            roi.pc5.name="NAME_1.id", 
                            roi.pc6.name="NAME_0.id", 
                            aid.pc1.centroid.name="NAME_3.id", 
-                           aid.precision.code="precision_code",
-                           binary=FALSE,
-                           sim_pc1=TRUE,
-                           extrapolation="quadratic")
+                           aid.precision.code="precision_code")
 
 # View Results
 summary(geoSIMEX_model)
