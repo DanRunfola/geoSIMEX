@@ -891,20 +891,19 @@ calc_lambda <- function(aidData,
                         aid.pc1.centroid.name="centroid.pc1.id"){
   
   # Prepping Variables
-  aid.precision.code <- aidData[[aid.precision.code]]
+  #aid.precision.code <- aidData[[aid.precision.code]]
   pc.original <- aidData[,aid.precision.code] 
   area <- roiData[,roi.area]
   probAidAssume <- area / sum(area)
 
   # Calculaitng Max Lambda
-  aidData[,aid.precision.code] <- 6
-  param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
+  pc.6.vector <- rep(6, nrow(aidData))
+  param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=pc.6.vector, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
   param_set[param_set!=0] <- 1
   param_set <- param_set*area
   maxLambda_denom <- sum(colSums(param_set))
   
-  aidData[,aid.precision.code] <- pc.original
-  param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
+  param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=pc.original, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
   param_set[param_set!=0] <- 1
   param_set <- param_set*area
   lambda <- sum(colSums(param_set)) / maxLambda_denom
