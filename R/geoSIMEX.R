@@ -365,7 +365,7 @@ geoSIMEX_est <- function(model,
 #'                                          aid.pc1.centroid.name="trueSubcounty")
 #'
 #' # Wealth - 1 to 1 relation with aid
-#'subcountyData$wealth <- subcountyData$trueAid + runif(nrow(subcountyData))
+#' subcountyData$wealth <- subcountyData$trueAid + runif(nrow(subcountyData))
 #'
 #' # Expected Value Aid 
 #' subcountyData$expectedAid <- expected_aid_ROI(aidData=aidData, 
