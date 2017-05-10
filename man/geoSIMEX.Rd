@@ -62,47 +62,92 @@ The function is built to work with data from AidData's data extration tool. The 
 Just like the lm() and glm() packages, geoSIMEX() is equipped to work with stargazer.
 }
 \examples{
-set.seed(42)
+library(devtools)
+install_github("itpir/geoSIMEX")
 
-# Generating Country Dataset
-countryData <- as.data.frame(matrix(NA, nrow=120, ncol=0))
-countryData$pc1.id <- 1:120
-countryData$pc2.id <- rep(1:(120/3), each=3)
-countryData$pc3.id <- rep(1:(120/(3*2)), each=(3*2))
-countryData$pc4.id <- rep(1:(120/(3*2*4)), each=(3*2*4))
-countryData$pc6.id <- 1
-countryData$area <- rgamma(120, shape=2)
+set.seed(500)
 
-# Creating Aid Dataset Without Error
-aidData <- as.data.frame(matrix(NA,nrow=100,ncol=0))
-aidData$disbursement <- runif(100,0,1) * 10000000 
-aidData$centroid.pc1.id <- sample(size=100,x=c(1:120), prob=rep(1/120, 120), replace=TRUE)
-aidData$precision.code <- 1
+##### Generating Country-Level Dataset #####
+numSubcounties <- 120
+numSubcountyInCounty <- 2 
+numCountyInDistrict <- 3
+numDistrictInRegion <- 2
 
-# Adding True Aid to Country Dataset
-countryData$aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, aid.project.amount=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
+N <- numSubcounties
+subcounty <- 1:N
+county <- rep(1:(N/numSubcountyInCounty), each=numSubcountyInCounty)
+district <- rep(1:(N/(numSubcountyInCounty*numCountyInDistrict)), each=(numSubcountyInCounty*numCountyInDistrict))
+region <- rep(1:(N/(numSubcountyInCounty*numCountyInDistrict*numDistrictInRegion)), each=(numSubcountyInCounty*numCountyInDistrict*numDistrictInRegion))
+country <- 1
 
-# Defining True Relation Between Aid and Wealth
-countryData$wealth <- countryData$aid + rnorm(120) * 0.1
+subcountyArea <- runif(N)
+probAid_assumed <- runif(N)
 
-# Creating Datasets with Uncertainty
-countryData <- subset(countryData, select = -c(aid))
-aidData$precision.code <- sample(size=100, x=c(1,2,3,4,6), prob=rep(1/5, 5), replace=TRUE)
+subcountyData <- as.data.frame(cbind(subcounty,county,district,region,country,probAid_assumed,subcountyArea))
 
-# Calculating Expected Aid and Running Naive Model
-countryData$Expected.Aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, aid.project.amount=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
+##### Creating Aid Dataset #####
+numberProjects = 50
+aidData <- as.data.frame(matrix(NA,nrow=numberProjects,ncol=3))
+names(aidData) <- c("aid","trueSubcounty","PC")
+aidData$aid <- runif(nrow(aidData)) * 100
+probAid_true <- runif(N)
+aidData$trueSubcounty <- sample(size=numberProjects,x=c(1:N), prob=probAid_true, replace=TRUE)
+aidData$PC  <- sample(size=numberProjects, x=c(1,2,3,4,6), prob=runif(5), replace=TRUE)
 
-lm_naive <- lm(wealth ~ Expected.Aid, data=countryData)
+# True Aid
+aidData$PC.1s <- 1
+subcountyData$trueAid <- expected_aid_ROI(aidData=aidData, 
+                                         roiData=subcountyData, 
+                                         roi.prob.aid="probAid_assumed", 
+                                         aid.project.amount="aid", 
+                                         aid.precision.code="PC.1s", 
+                                         roi.pc1.name="subcounty", 
+                                         roi.pc2.name="county", 
+                                         roi.pc3.name="district", 
+                                         roi.pc4.name="region", 
+                                         roi.pc5.name="region", 
+                                         roi.pc6.name="country", 
+                                         aid.pc1.centroid.name="trueSubcounty")
 
-# Implementing GeoSIMEX
-lm_geoSIMEX <- geoSIMEX(model = lm_naive, 
-                        geoSIMEXvariable = "Expected.Aid", 
-                        roiData = countryData, 
-                        aidData = aidData, 
-                        aid.project.amount = "disbursement")
+# Wealth - 1 to 1 relation with aid
+subcountyData$wealth <- subcountyData$trueAid + runif(nrow(subcountyData))
 
-summary(lm_geoSIMEX)
-plot(lm_geoSIMEX, variable="Expected.Aid") 
+# Expected Value Aid 
+subcountyData$expectedAid <- expected_aid_ROI(aidData=aidData, 
+                                             aid.project.amount="aid", 
+                                             aid.precision.code="PC", 
+                                             aid.pc1.centroid.name="trueSubcounty",
+                                             roiData=subcountyData, 
+                                             roi.prob.aid="probAid_assumed", 
+                                             roi.pc1.name="subcounty", 
+                                             roi.pc2.name="county", 
+                                             roi.pc3.name="district", 
+                                             roi.pc4.name="region", 
+                                             roi.pc5.name="region", 
+                                             roi.pc6.name="country")
+
+naive_model <- lm(wealth ~ expectedAid, data=subcountyData)
+
+geoSIMEX_model <- geoSIMEX(model = naive_model, 
+                          geoSIMEXvariable = "expectedAid", 
+                          aidData = aidData, 
+                          aid.project.amount = "aid",
+                          aid.pc1.centroid.name="trueSubcounty", 
+                          aid.precision.code="PC",
+                          roiData = subcountyData, 
+                          roi.area = "subcountyArea", 
+                          roi.prob.aid = "probAid_assumed", 
+                          roi.pc1.name="subcounty", 
+                          roi.pc2.name="county", 
+                          roi.pc3.name="district", 
+                          roi.pc4.name="region", 
+                          roi.pc5.name="region", 
+                          roi.pc6.name="country")
+
+##### Analyzing Results #####
+summary(naive_model)
+summary(geoSIMEX_model)
+plot(geoSIMEX_model, variable="expectedAid")
 }
 \references{
 Cook, J.R. and Stefanski, L.A. (1994) Simulation-extrapolation estimation in parametric measurement error models. Journal of American Statistical Association, 89, 1314 – 1328
