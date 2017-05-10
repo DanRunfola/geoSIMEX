@@ -335,19 +335,19 @@ geoSIMEX_est <- function(model,
 #' region <- rep(1:(N/(numSubcountyInCounty*numCountyInDistrict*numDistrictInRegion)), each=(numSubcountyInCounty*numCountyInDistrict*numDistrictInRegion))
 #' country <- 1
 #'
-#'subcountyArea <- runif(N)
-#'probAid_assumed <- runif(N)
+#' subcountyArea <- runif(N)
+#' probAid_assumed <- runif(N)
 #'
-#'subcountyData <- as.data.frame(cbind(subcounty,county,district,region,country,probAid_assumed,subcountyArea))
+#' subcountyData <- as.data.frame(cbind(subcounty,county,district,region,country,probAid_assumed,subcountyArea))
 #'
-#'##### Creating Aid Dataset #####
-#'numberProjects = 50
-#'aidData <- as.data.frame(matrix(NA,nrow=numberProjects,ncol=3))
-#'names(aidData) <- c("aid","trueSubcounty","PC")
-#'aidData$aid <- runif(nrow(aidData)) * 100
-#'probAid_true <- runif(N)
-#'aidData$trueSubcounty <- sample(size=numberProjects,x=c(1:N), prob=probAid_true, replace=TRUE)
-#'aidData$PC  <- sample(size=numberProjects, x=c(1,2,3,4,6), prob=runif(5), replace=TRUE)
+#' ##### Creating Aid Dataset #####
+#' numberProjects = 50
+#' aidData <- as.data.frame(matrix(NA,nrow=numberProjects,ncol=3))
+#' names(aidData) <- c("aid","trueSubcounty","PC")
+#' aidData$aid <- runif(nrow(aidData)) * 100
+#' probAid_true <- runif(N)
+#' aidData$trueSubcounty <- sample(size=numberProjects,x=c(1:N), prob=probAid_true, replace=TRUE)
+#' aidData$PC  <- sample(size=numberProjects, x=c(1,2,3,4,6), prob=runif(5), replace=TRUE)
 #'
 #' # True Aid
 #' aidData$PC.1s <- 1
@@ -364,10 +364,10 @@ geoSIMEX_est <- function(model,
 #'                                          roi.pc6.name="country", 
 #'                                          aid.pc1.centroid.name="trueSubcounty")
 #'
-#'# Wealth - 1 to 1 relation with aid
+#' # Wealth - 1 to 1 relation with aid
 #'subcountyData$wealth <- subcountyData$trueAid + runif(nrow(subcountyData))
 #'
-#'# Expected Value Aid 
+#' # Expected Value Aid 
 #' subcountyData$expectedAid <- expected_aid_ROI(aidData=aidData, 
 #'                                              aid.project.amount="aid", 
 #'                                              aid.precision.code="PC", 
@@ -756,6 +756,10 @@ print.summary.modelAverageRandProb <- function(x, ...){
 #' 
 #' @author AidData
 #' 
+#' @import parallel
+#'
+#' @export
+#' 
 #' @description
 #' \code{expected_aid_ROI} Calculates expected value of aid.
 #' 
@@ -800,6 +804,10 @@ prob_aid_ROI <- function(aidData, roiData, probAidAssume, aid.project.amount, ai
 #' @title Spatial Uncertainty (Lambda)
 #' 
 #' @author AidData
+#' 
+#' @import parallel
+#'
+#' @export
 #' 
 #' @description
 #' \code{calc_lambda} Calculates spatial uncertainty (lambda) of aid project dataset
