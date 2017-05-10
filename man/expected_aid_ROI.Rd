@@ -4,12 +4,14 @@
 \alias{expected_aid_ROI}
 \title{Expected Value Aid}
 \usage{
-expected_aid_ROI(aidData, roiData, probAidAssume, dollar_set, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
+expected_aid_ROI(aidData, roiData, probAidAssume, aid.project.amount, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
 }
 \arguments{
 \item{aidData}{name of dataframe of aid project data}
 
 \item{roiData}{name of dataframe of ROI data}
+
+\item{aid.project.amount}{character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.}
 
 \item{aid.precision.code}{character containing the name of the variable in the aidData dataset which contains precision codes for each project. "pc1.id" is the default name in datasets produced by AidData's data extraction tool}
 
@@ -25,8 +27,6 @@ expected_aid_ROI(aidData, roiData, probAidAssume, dollar_set, aid.precision.code
 
 \item{aid.pc1.centroid.name}{character containing the name of the variable in the aidData dataset which contains names or IDs of a precision code 1 spatial area that the aid project falls within. "centroid.pc1.id" is the default name in datasets produced by AidData's data extraction tool}
 
-\item{aid.amount}{character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.}
-
 \item{roi.area}{character containing the name of the variable in the ROI dataset which contains areas of ROIs. "area" is the default name in datasets produced by AidData's data extraction tool}
 }
 \description{
@@ -41,4 +41,3 @@ The function is built to work with data from AidData's data extration tool. The 
 \author{
 AidData
 }
-

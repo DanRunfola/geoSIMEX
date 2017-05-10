@@ -4,7 +4,7 @@
 \alias{geoSIMEX}
 \title{Geographic SIMEX}
 \usage{
-geoSIMEX(model, geoSIMEXvariable, roiData, aidData, aid.amount, 
+geoSIMEX(model, geoSIMEXvariable, roiData, aidData, aid.project.amount, 
 iterations=500, bins=3, fitting.method = "quadratic", roi.area="area",  
 roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", 
 roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc5.name="pc6.id",  
@@ -20,7 +20,7 @@ parallel=TRUE, mc.cores=2)
 
 \item{aidData}{name of dataframe of aid project data}
 
-\item{aid.amount}{character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.}
+\item{aid.project.amount}{character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.}
 
 \item{iterations}{number of simulated error iterations}
 
@@ -80,7 +80,7 @@ aidData$centroid.pc1.id <- sample(size=100,x=c(1:120), prob=rep(1/120, 120), rep
 aidData$precision.code <- 1
 
 # Adding True Aid to Country Dataset
-countryData$aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, dollar_set=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
+countryData$aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, aid.project.amount=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
 
 # Defining True Relation Between Aid and Wealth
 countryData$wealth <- countryData$aid + rnorm(120) * 0.1
@@ -90,7 +90,7 @@ countryData <- subset(countryData, select = -c(aid))
 aidData$precision.code <- sample(size=100, x=c(1,2,3,4,6), prob=rep(1/5, 5), replace=TRUE)
 
 # Calculating Expected Aid and Running Naive Model
-countryData$Expected.Aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, dollar_set=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
+countryData$Expected.Aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, aid.project.amount=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
 
 lm_naive <- lm(wealth ~ Expected.Aid, data=countryData)
 
@@ -99,15 +99,14 @@ lm_geoSIMEX <- geoSIMEX(model = lm_naive,
                         geoSIMEXvariable = "Expected.Aid", 
                         roiData = countryData, 
                         aidData = aidData, 
-                        aid.amount = "disbursement")
+                        aid.project.amount = "disbursement")
 
 summary(lm_geoSIMEX)
 plot(lm_geoSIMEX, variable="Expected.Aid") 
 }
-\author{
-AidData
-}
 \references{
 Cook, J.R. and Stefanski, L.A. (1994) Simulation-extrapolation estimation in parametric measurement error models. Journal of American Statistical Association, 89, 1314 – 1328
 }
-
+\author{
+AidData
+}

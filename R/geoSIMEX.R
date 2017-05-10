@@ -1,7 +1,9 @@
 ##### SECTION 1: GEOSIMEX SIMULATION FUNCTION #####
-roxygen2::roxygenise()
+setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/")
+#roxygen2::roxygenise()
+#devtools::document()
 
-library(parallel)
+#library(parallel)
 
 geoSIMEX_est <- function(model, 
                          geoSIMEXvariable, 
@@ -265,95 +267,96 @@ geoSIMEX_est <- function(model,
               valuesMean=extrapolatedMean.df))
 }
 
-# @title Geographic SIMEX
-# 
-# @author AidData
-# 
-# @import parallel
-# 
-# @description
-# \code{geoSIMEX} Implementation of the geoSIMEX algorithm for models 
-# with spatial uncertainty. Package built to work with data from 
-# AidData's data extraction tool.
-# 
-# @usage
-# geoSIMEX(model, geoSIMEXvariable, roiData, aidData, aid.project.amount, 
-# iterations=500, bins=3, fitting.method = "quadratic", roi.area="area",  
-# roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", 
-# roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc5.name="pc6.id",  
-# aid.pc1.centroid.name="centroid.pc1.id", aid.precision.code="precision.code",
-# parallel=TRUE, mc.cores=2)
-# 
-# @param model the naive model
-# @param SIMEXvariable character containing the name of the variable with spatial uncertainty
-# @param roiData name of dataframe of ROI data 
-# @param aidData name of dataframe of aid project data
-# @param aid.project.amount character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.
-# @param iterations number of simulated error iterations
-# @param bins number of bins to group coefficients
-# @param fitting.method fitting method for the extrapolation. linear and quadratic are implemented.
-# @param roi.area character containing the name of the variable in the ROI dataset which contains areas of ROIs. "area" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc1.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc2.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 2 spatial area that each ROI falls within. "pc2.id" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc3.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 3 spatial area that each ROI falls within. "pc3.id" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc4.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 4 spatial area that each ROI falls within. "pc4.id" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc6.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 6 and 8 spatial area that each ROI falls within. "pc6.id" is the default name in datasets produced by AidData's data extraction tool
-# @param aid.pc1.centroid.name character containing the name of the variable in the aidData dataset which contains names or IDs of a precision code 1 spatial area that the aid project falls within. "centroid.pc1.id" is the default name in datasets produced by AidData's data extraction tool
-# @param aid.precision.code character containing the name of the variable in the aidData dataset which contains precision codes for each project. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
-# @param parallel parallelize iterations
-# @param mc.cores number of cores to use for parallelization
-# 
-# @details The values contained within roi.pc1.name and aid.pc1.centroid.name variables should be the same.
-# 
-# @note The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website]. 
-# 
-# Just like the lm() and glm() packages, geoSIMEX() is equipped to work with stargazer.
-# 
-# @references Cook, J.R. and Stefanski, L.A. (1994) Simulation-extrapolation estimation in parametric measurement error models. Journal of American Statistical Association, 89, 1314 – 1328
-# 
-# @examples 
-# set.seed(42)
-# 
-# # Generating Country Dataset
-# countryData <- as.data.frame(matrix(NA, nrow=120, ncol=0))
-# countryData$pc1.id <- 1:120
-# countryData$pc2.id <- rep(1:(120/3), each=3)
-# countryData$pc3.id <- rep(1:(120/(3*2)), each=(3*2))
-# countryData$pc4.id <- rep(1:(120/(3*2*4)), each=(3*2*4))
-# countryData$pc6.id <- 1
-# countryData$area <- rgamma(120, shape=2)
-# 
-# # Creating Aid Dataset Without Error
-# aidData <- as.data.frame(matrix(NA,nrow=100,ncol=0))
-# aidData$disbursement <- runif(100,0,1) * 10000000 
-# aidData$centroid.pc1.id <- sample(size=100,x=c(1:120), prob=rep(1/120, 120), replace=TRUE)
-# aidData$precision.code <- 1
-# 
-# # Adding True Aid to Country Dataset
-# countryData$aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, aid.project.amount=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
-# 
-# # Defining True Relation Between Aid and Wealth
-# countryData$wealth <- countryData$aid + rnorm(120) * 0.1
-# 
-# # Creating Datasets with Uncertainty
-# countryData <- subset(countryData, select = -c(aid))
-# aidData$precision.code <- sample(size=100, x=c(1,2,3,4,6), prob=rep(1/5, 5), replace=TRUE)
-# 
-# # Calculating Expected Aid and Running Naive Model
-# countryData$Expected.Aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, aid.project.amount=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
-# 
-# lm_naive <- lm(wealth ~ Expected.Aid, data=countryData)
-# 
-# # Implementing GeoSIMEX
-# lm_geoSIMEX <- geoSIMEX(model = lm_naive, 
-#                         geoSIMEXvariable = "Expected.Aid", 
-#                         roiData = countryData, 
-#                         aidData = aidData, 
-#                         aid.project.amount = "disbursement")
-# 
-# summary(lm_geoSIMEX)
-# plot(lm_geoSIMEX, variable="Expected.Aid") 
-
+#' @title Geographic SIMEX
+#' 
+#' @author AidData
+#' 
+#' @import parallel
+#'
+#' @export
+#' 
+#' @description
+#' \code{geoSIMEX} Implementation of the geoSIMEX algorithm for models 
+#' with spatial uncertainty. Package built to work with data from 
+#' AidData's data extraction tool.
+#' 
+#' @usage
+#' geoSIMEX(model, geoSIMEXvariable, roiData, aidData, aid.project.amount, 
+#' iterations=500, bins=3, fitting.method = "quadratic", roi.area="area",  
+#' roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", 
+#' roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc5.name="pc6.id",  
+#' aid.pc1.centroid.name="centroid.pc1.id", aid.precision.code="precision.code",
+#' parallel=TRUE, mc.cores=2)
+#' 
+#' @param model the naive model
+#' @param SIMEXvariable character containing the name of the variable with spatial uncertainty
+#' @param roiData name of dataframe of ROI data 
+#' @param aidData name of dataframe of aid project data
+#' @param aid.project.amount character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.
+#' @param iterations number of simulated error iterations
+#' @param bins number of bins to group coefficients
+#' @param fitting.method fitting method for the extrapolation. linear and quadratic are implemented.
+#' @param roi.area character containing the name of the variable in the ROI dataset which contains areas of ROIs. "area" is the default name in datasets produced by AidData's data extraction tool
+#' @param roi.pc1.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param roi.pc2.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 2 spatial area that each ROI falls within. "pc2.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param roi.pc3.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 3 spatial area that each ROI falls within. "pc3.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param roi.pc4.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 4 spatial area that each ROI falls within. "pc4.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param roi.pc6.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 6 and 8 spatial area that each ROI falls within. "pc6.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param aid.pc1.centroid.name character containing the name of the variable in the aidData dataset which contains names or IDs of a precision code 1 spatial area that the aid project falls within. "centroid.pc1.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param aid.precision.code character containing the name of the variable in the aidData dataset which contains precision codes for each project. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param parallel parallelize iterations
+#' @param mc.cores number of cores to use for parallelization
+#' 
+#' @details The values contained within roi.pc1.name and aid.pc1.centroid.name variables should be the same.
+#' 
+#' @note The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website]. 
+#' 
+#' Just like the lm() and glm() packages, geoSIMEX() is equipped to work with stargazer.
+#' 
+#' @references Cook, J.R. and Stefanski, L.A. (1994) Simulation-extrapolation estimation in parametric measurement error models. Journal of American Statistical Association, 89, 1314 – 1328
+#' 
+#' @examples 
+#' set.seed(42)
+#' 
+#' # Generating Country Dataset
+#' countryData <- as.data.frame(matrix(NA, nrow=120, ncol=0))
+#' countryData$pc1.id <- 1:120
+#' countryData$pc2.id <- rep(1:(120/3), each=3)
+#' countryData$pc3.id <- rep(1:(120/(3*2)), each=(3*2))
+#' countryData$pc4.id <- rep(1:(120/(3*2*4)), each=(3*2*4))
+#' countryData$pc6.id <- 1
+#' countryData$area <- rgamma(120, shape=2)
+#' 
+#' # Creating Aid Dataset Without Error
+#' aidData <- as.data.frame(matrix(NA,nrow=100,ncol=0))
+#' aidData$disbursement <- runif(100,0,1) * 10000000 
+#' aidData$centroid.pc1.id <- sample(size=100,x=c(1:120), prob=rep(1/120, 120), replace=TRUE)
+#' aidData$precision.code <- 1
+#' 
+#' # Adding True Aid to Country Dataset
+#' countryData$aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, aid.project.amount=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
+#' 
+#' # Defining True Relation Between Aid and Wealth
+#' countryData$wealth <- countryData$aid + rnorm(120) * 0.1
+#' 
+#' # Creating Datasets with Uncertainty
+#' countryData <- subset(countryData, select = -c(aid))
+#' aidData$precision.code <- sample(size=100, x=c(1,2,3,4,6), prob=rep(1/5, 5), replace=TRUE)
+#' 
+#' # Calculating Expected Aid and Running Naive Model
+#' countryData$Expected.Aid <- expected_aid_ROI(aidData=aidData, roiData=countryData, probAidAssume=countryData$area, aid.project.amount=aidData$disbursement, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
+#' 
+#' lm_naive <- lm(wealth ~ Expected.Aid, data=countryData)
+#' 
+#' # Implementing GeoSIMEX
+#' lm_geoSIMEX <- geoSIMEX(model = lm_naive, 
+#'                         geoSIMEXvariable = "Expected.Aid", 
+#'                         roiData = countryData, 
+#'                         aidData = aidData, 
+#'                         aid.project.amount = "disbursement")
+#' 
+#' summary(lm_geoSIMEX)
+#' plot(lm_geoSIMEX, variable="Expected.Aid") 
 geoSIMEX <- function(x, ...) UseMethod("geoSIMEX")
 
 geoSIMEX.default <- function(model, 
@@ -699,168 +702,33 @@ print.summary.modelAverageRandProb <- function(x, ...){
   printCoefmat(x$coefficients, P.value=TRUE, has.Pvalue=TRUE)
 }
 
-##### SECTION 1C: MODEL AVERAGING, RAND ROI #####
-
-# Model Averaging Randomly Drop Project in ROI
-modelAverageRandROI_est <- function(iterations, 
-                                    aidData, 
-                                    roiData, 
-                                    roi.area, 
-                                    aid.project.amount, 
-                                    model, 
-                                    geoSIMEXvariable, 
-                                    binary, 
-                                    aid.precision.code, 
-                                    roi.pc1.name, 
-                                    roi.pc2.name, 
-                                    roi.pc3.name, 
-                                    roi.pc4.name, 
-                                    roi.pc5.name, 
-                                    roi.pc6.name, 
-                                    aid.pc1.centroid.name){
-  
-  # Calculating paramSet
-  param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=roiData[,roi.area], aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
-  
-  model.list <- lapply(1:iterations, geoSimulate_realization, param_set=param_set, roiData=roiData, aid.project.amount=aid.project.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary, aidData=aidData)
-  
-  coef.df <- model.list[[1]]$model.SIMEX.coefs
-  se.df <- model.list[[1]]$model.SIMEX.se
-  for(i in 2:length(model.list)){
-    coef.df <- rbind(coef.df, model.list[[i]]$model.SIMEX.coefs)
-    se.df <- rbind(se.df, model.list[[i]]$model.SIMEX.se)
-  }
-  
-  coef <- colSums(coef.df) / nrow(coef.df)
-  
-  var.df <- se.df^2
-  
-  se <- lapply(1:length(coef), function(i) sqrt(sum((1/iterations)*(var.df[,i] + (coef.df[,i] - coef[i])^2))))
-  se <- as.data.frame(se)
-  names(se) <- names(coef)
-  
-  coef <- as.data.frame(t(coef))
-  row.names(coef) <- "Coefficients"
-  row.names(se) <- "Std. Error"
-  
-  return(list(coefficients=coef,
-              se=se,
-              df=model$df,
-              coef.all=coef.df,
-              se.all=se.df,
-              residuals=model$residuals,
-              geoSIMEXvariable=geoSIMEXvariable,
-              iterations=iterations))
-}
-
-modelAverageRandROI <- function(x, ...) UseMethod("modelAverageRandROI")
-
-modelAverageRandROI.default <- function(iterations=500, 
-                                        aidData, 
-                                        roiData, 
-                                        roi.area, 
-                                        aid.project.amount, 
-                                        model, 
-                                        geoSIMEXvariable, 
-                                        binary=FALSE, 
-                                        aid.precision.code="precision.code", 
-                                        roi.pc1.name="pc1.id", 
-                                        roi.pc2.name="pc2.id", 
-                                        roi.pc3.name="pc3.id", 
-                                        roi.pc4.name="pc4.id", 
-                                        roi.pc5.name="pc5.id", 
-                                        roi.pc6.name="pc6.id", 
-                                        aid.pc1.centroid.name="centroid.pc1.id"){
-  
-  est <- modelAverageRandROI_est(iterations=iterations, 
-                                 aidData=aidData, 
-                                 roiData=roiData, 
-                                 roi.area=roi.area, 
-                                 aid.project.amount=aid.project.amount, 
-                                 model=model, 
-                                 geoSIMEXvariable=geoSIMEXvariable, 
-                                 binary=binary, 
-                                 aid.precision.code=aid.precision.code, 
-                                 roi.pc1.name=roi.pc1.name, 
-                                 roi.pc2.name=roi.pc2.name, 
-                                 roi.pc3.name=roi.pc3.name, 
-                                 roi.pc4.name=roi.pc4.name, 
-                                 roi.pc5.name=roi.pc5.name, 
-                                 roi.pc6.name=roi.pc6.name, 
-                                 aid.pc1.centroid.name=aid.pc1.centroid.name)
-  
-  est$call <- model$call
-  
-  class(est) <- "modelAverageRandROI"
-  est
-}
-
-print.modelAverageRandROI <- function(x, ...){
-  cat("Naive Model:\n")
-  print(x$call)
-  cat("\ngeoSIMEX-Variables: ", x$geoSIMEXvariable, sep="")
-  cat("\nNumer of Iterations: ", x$iterations, sep= "")
-  cat("\n\nCoefficients:\n")
-  print(x$coefficients, row.names=FALSE)  
-}
-
-summary.modelAverageRandROI <- function(object, ...){
-  
-  Coef <- as.numeric(object$coefficients)
-  StdErr <- as.numeric(object$se)
-  tval <- Coef / StdErr
-  
-  TAB <- cbind(Estimate = Coef,
-               StdErr = StdErr,
-               t.value = tval,
-               p.value = 2*pt(-abs(tval), df=object$df))
-  
-  TAB <- as.data.frame(TAB)
-  row.names(TAB) <- names(object$coefficients)
-  names(TAB) <- c("Estimate","Std. Error","t.value","p.value")
-  
-  res <- list(call=object$call,
-              coefficients=TAB)
-  
-  class(res) <- "summary.modelAverageRandProb"
-  res
-}
-
-print.summary.modelAverageRandROI <- function(x, ...){
-  
-  cat("Call:\n")
-  print(x$call)
-  cat("\n")
-  
-  printCoefmat(x$coefficients, P.value=TRUE, has.Pvalue=TRUE)
-}
 
 ##### SECTION 2: FUNCTIONS TO BE INCLUDED IN PACKAGE #####
-# Calculates expected value of aid for each ROI
-# 
-# @title Expected Value Aid
-# 
-# @author AidData
-# 
-# @description
-# \code{expected_aid_ROI} Calculates expected value of aid.
-# 
-# @usage
-# expected_aid_ROI(aidData, roiData, probAidAssume, aid.project.amount, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
-#  
-# @param roiData name of dataframe of ROI data 
-# @param aidData name of dataframe of aid project data
-# @param aid.project.amount character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.
-# @param roi.area character containing the name of the variable in the ROI dataset which contains areas of ROIs. "area" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc1.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc2.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc2.id" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc3.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc3.id" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc4.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc4.id" is the default name in datasets produced by AidData's data extraction tool
-# @param roi.pc6.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc6.id" is the default name in datasets produced by AidData's data extraction tool
-# @param aid.pc1.centroid.name character containing the name of the variable in the aidData dataset which contains names or IDs of a precision code 1 spatial area that the aid project falls within. "centroid.pc1.id" is the default name in datasets produced by AidData's data extraction tool
-# @param aid.precision.code character containing the name of the variable in the aidData dataset which contains precision codes for each project. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
-#  
-# @note The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website].
+#' Calculates expected value of aid for each ROI
+#' 
+#' @title Expected Value Aid
+#' 
+#' @author AidData
+#' 
+#' @description
+#' \code{expected_aid_ROI} Calculates expected value of aid.
+#' 
+#' @usage
+#' expected_aid_ROI(aidData, roiData, probAidAssume, aid.project.amount, aid.precision.code="precision.code", roi.pc1.name="pc1.id", roi.pc2.name="pc2.id", roi.pc3.name="pc3.id", roi.pc4.name="pc4.id", roi.pc5.name="pc5.id", roi.pc6.name="pc6.id", aid.pc1.centroid.name="centroid.pc1.id")
+#'  
+#' @param roiData name of dataframe of ROI data 
+#' @param aidData name of dataframe of aid project data
+#' @param aid.project.amount character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.
+#' @param roi.area character containing the name of the variable in the ROI dataset which contains areas of ROIs. "area" is the default name in datasets produced by AidData's data extraction tool
+#' @param roi.pc1.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param roi.pc2.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc2.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param roi.pc3.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc3.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param roi.pc4.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc4.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param roi.pc6.name character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc6.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param aid.pc1.centroid.name character containing the name of the variable in the aidData dataset which contains names or IDs of a precision code 1 spatial area that the aid project falls within. "centroid.pc1.id" is the default name in datasets produced by AidData's data extraction tool
+#' @param aid.precision.code character containing the name of the variable in the aidData dataset which contains precision codes for each project. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
+#'  
+#' @note The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website].
 expected_aid_ROI <- function(aidData, roiData, roi.prob.aid, aid.project.amount, aid.precision.code, roi.pc1.name="ID_3", roi.pc2.name="ID_2", roi.pc3.name="ID_1", roi.pc4.name="ID_1", roi.pc5.name="ID_1", roi.pc6.name="ID_0", aid.pc1.centroid.name="ID_3"){
 
   aid.precision.code <- aidData[,aid.precision.code]   
