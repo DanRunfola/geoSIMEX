@@ -6,8 +6,7 @@ Maintainer: Rob Marty  <ramarty@email.wm.edu>
 Description: geoSIMEX is the best.
 License: MIT + file LICENSE
 Imports: sp, BB
-Depends: R (>= 3.0.1), Parallels
-Suggests: spdep
+Depends: R (>= 3.0.1), parallels
 URL: https://github.com/itpir/geoSIMEX
 BugReports: https://github.com/itpir/geoSIMEX/issues
 RoxygenNote: 5.0.1
