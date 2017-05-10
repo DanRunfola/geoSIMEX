@@ -1,8 +1,8 @@
 Package: geoSIMEX
 Title: geoSIMEX
 Version: 0.1.1
-Author: Rob Marty  <ramarty@email.wm.edu>, Dan Runfola <dan@danrunfola.com>, Seth Goodman <sgoodman@aiddata.org>
-Maintainer: Rob Marty  <ramarty@email.wm.edu>
+Author: Rob Marty  <ramarty@email.wm.edu>, Seth Goodman <sgoodman@aiddata.org>, Michael LeFew <mclefew@email.wm.edu>, Ariel BenYishay <abenyishay@wm.edu>, Dan Runfola <dan@danrunfola.com>
+Maintainer: Rob Marty <ramarty@email.wm.edu>
 Description: geoSIMEX is the best.
 License: MIT + file LICENSE
 Depends: R (>= 3.0.1), parallel
