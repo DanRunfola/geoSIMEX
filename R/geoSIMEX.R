@@ -826,7 +826,6 @@ print.summary.modelAverageRandProb <- function(x, ...){
 #'                                              roi.pc4.name="region", 
 #'                                              roi.pc5.name="region", 
 #'                                              roi.pc6.name="country")
-
 expected_aid_ROI <- function(aidData, roiData, roi.prob.aid, aid.project.amount, aid.precision.code, roi.pc1.name="ID_3", roi.pc2.name="ID_2", roi.pc3.name="ID_1", roi.pc4.name="ID_1", roi.pc5.name="ID_1", roi.pc6.name="ID_0", aid.pc1.centroid.name="ID_3"){
 
   aid.precision.code <- aidData[,aid.precision.code]   
@@ -892,10 +891,11 @@ calc_lambda <- function(aidData,
                         aid.pc1.centroid.name="centroid.pc1.id"){
   
   # Prepping Variables
+  aid.precision.code <- aidData[[aid.precision.code]]
   pc.original <- aidData[,aid.precision.code] 
   area <- roiData[,roi.area]
   probAidAssume <- area / sum(area)
-  
+
   # Calculaitng Max Lambda
   aidData[,aid.precision.code] <- 6
   param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
