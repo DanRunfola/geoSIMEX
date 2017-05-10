@@ -1,9 +1,9 @@
 ##### SECTION 1: GEOSIMEX SIMULATION FUNCTION #####
-setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/")
+# setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/")
 #roxygen2::roxygenise()
 #devtools::document()
 
-#library(parallel)
+# library(parallel)
 # https://hilaryparker.com/2014/04/29/writing-an-r-package-from-scratch/
 # document()
 
