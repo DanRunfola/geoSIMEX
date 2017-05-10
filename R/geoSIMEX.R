@@ -1,5 +1,5 @@
 ##### SECTION 1: GEOSIMEX SIMULATION FUNCTION #####
-#roxygen2::roxygenise()
+roxygen2::roxygenise()
 
 library(parallel)
 
@@ -27,7 +27,8 @@ geoSIMEX_est <- function(model,
                          sim_pc1,
                          parallel,
                          extrapolation,
-                         mc.cores){
+                         mc.cores,
+                         status.bar){
   
   ##### Converting roi.names into Characters #####
   
@@ -84,12 +85,12 @@ geoSIMEX_est <- function(model,
   # Calculate Lambda
   lambda_naive <- calcLambda(param_set, maxLambda_denom, as.matrix(roiData[roi.area]))
     
-  ##### FIND PROBABILITY THAT MAXIMIZES LIKELIHOOD HERE #####
-  
   ##### Simulating Data with Additional Error and Putting in One Dataframe #####
   prob.increase.list <- runif(iterations,0,1)
   
-  geoSimulateError.results <- mclapply(prob.increase.list, geoSimulateError, 
+  status.bar = TRUE
+  if(status.bar){
+  geoSimulateError.results <- lapply_pb(prob.increase.list, geoSimulateError, 
                                        aidData=aidData, 
                                        roiData=roiData, 
                                        probAidAssume=probAid, 
@@ -108,8 +109,30 @@ geoSIMEX_est <- function(model,
                                        model=model,
                                        geoSIMEXvariable=geoSIMEXvariable,
                                        binary=binary,
-                                       sim_pc1=sim_pc1,
-                                       mc.cores=mc.cores)
+                                       sim_pc1=sim_pc1)
+  } else {
+    geoSimulateError.results <- mclapply(prob.increase.list, geoSimulateError, 
+                                         aidData=aidData, 
+                                         roiData=roiData, 
+                                         probAidAssume=probAid, 
+                                         PC_researcherSees=precision.code.original, 
+                                         maxLambda_denom=maxLambda_denom,
+                                         roi.area=roi.area,
+                                         aid.precision.code=aid.precision.code, 
+                                         roi.pc1.name=roi.pc1.name, 
+                                         roi.pc2.name=roi.pc2.name, 
+                                         roi.pc3.name=roi.pc3.name, 
+                                         roi.pc4.name=roi.pc4.name, 
+                                         roi.pc5.name=roi.pc5.name, 
+                                         roi.pc6.name=roi.pc6.name, 
+                                         aid.pc1.centroid.name=aid.pc1.centroid.name,
+                                         aid.project.amount=aid.project.amount,
+                                         model=model,
+                                         geoSIMEXvariable=geoSIMEXvariable,
+                                         binary=binary,
+                                         sim_pc1=sim_pc1,
+                                         mc.cores=mc.cores)
+  }
   
   geoSimulateError.results.df <- matrix(NA, ncol=ncol(geoSimulateError.results[[1]][["model.SIMEX.coefs"]]),nrow=0)
   geoSimulateError.results.df <- as.data.frame(geoSimulateError.results.df)
@@ -135,8 +158,8 @@ geoSIMEX_est <- function(model,
   binSize_lb <- minLambda
   binSize_ub <- minLambda + binSize
   
-  numIter <- (maxLambda - minLambda) / binSize
-  for(i in 1:ceiling(numIter)){
+  numIter <- bins
+  for(i in 1:numIter){
     
     geoSimulateError.temp <- geoSimulateError.results.df[(geoSimulateError.results.df$lambda >= binSize_lb) & (geoSimulateError.results.df$lambda <= binSize_ub),]
     geoSimulateError.temp.mean <- colMeans(geoSimulateError.temp)
@@ -340,7 +363,7 @@ geoSIMEX.default <- function(model,
                              aid.project.amount,
                              iterations=500, 
                              bins=4, 
-                             number.from.bin=1,
+                             number.from.bin=2,
                              number.from.bin.average=TRUE,
                              fitting.method = "quadratic", 
                              roi.area="Shape_Area",  
@@ -357,7 +380,8 @@ geoSIMEX.default <- function(model,
                              sim_pc1=TRUE,
                              parallel=TRUE, 
                              extrapolation="quadratic",
-                             mc.cores=1){
+                             mc.cores=1,
+                             status.bar = TRUE){
   
   est <- geoSIMEX_est(model=model, 
                       geoSIMEXvariable=geoSIMEXvariable, 
@@ -918,8 +942,141 @@ calc_lambda <- function(aidData,
   return(lambda)
 }
 
+subset.aiddata <- function(json){
+  
+  #### Import Dataset
+  # Eventually all datasets will be imported into R, so can just use this.
+  #geo.data <- eval(parse(text=as.character(json$release_data[5])))
+  # https://github.com/chrisalbon/code_r/blob/master/download-and-unzip-data.r
+  # http://stackoverflow.com/questions/23899525/using-r-to-download-zipped-data-file-extract-and-import-csv  
+  # http://stackoverflow.com/questions/32647779/r-download-and-unzip-file-to-store-in-data-frame
+  # https://github.com/AidData-WM/public_datasets/tree/master/geocoded
+  # "https://github.com/AidData-WM/public_datasets/geocoded/UgandaAIMS_GeocodedResearchRelease_Level1_v1.4.1.zip"
+  
+  geo.data.name <- json$release_data$dataset
+  # Modifying geo.data.name (geocoded dataset name) to match the name in github:
+  # 1. Changing to lowercase
+  # 2. Replacing "_" with "."
+  
+  geo.data.name <- tolower(geo.data.name)
+  geo.data.name <- gsub("_",".",geo.data.name, fixed=TRUE)
+  
+  # Downloading dataset from github
+  github.datasets <- read_html("https://github.com/AidData-WM/public_datasets/tree/master/geocoded")
+  github.datasets <- html_text(github.datasets)
+  github.datasets <- strsplit(github.datasets, "\n")
+  github.datasets <- github.datasets[[1]]
+  github.datasets <- gsub(" ", "", github.datasets, fixed = TRUE)
+  github.datasets.modified <- gsub("_", ".", github.datasets, fixed = TRUE)
+  github.datasets.modified <- tolower(github.datasets.modified)
+  github.dataset.name.zip <- github.datasets[github.datasets.modified %in% paste(geo.data.name, ".zip", sep="")]
+  github.dataset.name <- gsub('.{4}$', '', github.dataset.name.zip)
+  
+  file.path <- paste("https://github.com/AidData-WM/public_datasets/blob/master/geocoded/",github.dataset.name.zip,"?raw=TRUE",sep="")
+  
+  download.file(file.path, destfile=github.dataset.name.zip)
+  unzip(github.dataset.name.zip, exdir=".")
+  
+  geo.data <- read.csv(paste(github.dataset.name,"/data/level_1a.csv",sep=""))
+  
+  # Merging GADM names to data  
+  geo.data$latitude[is.na(geo.data$latitude)] <- geo.data$latitude[!is.na(geo.data$latitude)][1]
+  geo.data$longitude[is.na(geo.data$longitude)] <- geo.data$longitude[!is.na(geo.data$longitude)][1]
+  
+  coordinates(geo.data) <- ~longitude+latitude
+  proj4string(geo.data) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  
+  #### Extracting GADM Data, that matches AidData 
+  gadm <- raster::getData('GADM', country=toupper(substr(json$boundary$name,1,3)), level=as.numeric(substr(json$boundary$name,8,8)))
+  
+  aiddata.gadm.over <- over(geo.data, gadm)
+  
+  #### Adding ADM Names to Aid Dataset 
+  
+  adm.level <- as.numeric(substr(json$boundary$name,8,8))
+  
+  for(i in 0:adm.level){
+    
+    geo.data[[paste("NAME_",i,sep="")]] <- aiddata.gadm.over[,paste("NAME_",i,sep="")]
+    geo.data[[paste("ID_",i,sep="")]] <- aiddata.gadm.over[,paste("ID_",i,sep="")]
+  }
+  
+  geo.data <- geo.data@data
+  
+  #### Subsetting by Filter
+  
+  # Number of filters to subset by
+  num.filters <- length(json$release_data$filters)
+  
+  for(i in 1:num.filters){
+    
+    filter <- names(json$release_data$filters)[i]
+    use.filter <- TRUE
+    
+    if( (filter == "donors") & (json$release_data$filters[i] == "All") ){
+      use.filter <- FALSE
+    }
+    
+    if(filter == "transaction_year"){
+      
+      # Loop through years, add "1" to keep.obs if meets condition to keep observation
+      keep.obs <- rep(0,length(geo.data$transactions_start_year))
+      for(year in matrix(unlist(json$release_data$filters[i]))[,1]){
+        keep.obs <- keep.obs + as.numeric((year >= geo.data$transactions_start_year) & (year <= geo.data$transactions_end_year))
+      }
+      
+      geo.data <- geo.data[keep.obs > 0,]
+      
+      use.filter <- FALSE
+    }
+    
+    
+    # Checking to ensure filter exists in dataset.
+    # If doesn't exist, skip.
+    # Filter name in JSON must match variable name in aid dataset
+    
+    if(use.filter){
+      
+      # Checking to make sure filter exists in dataset (if doesn't, skip). Filter name in JSON must match filter
+      if(filter %in% names(geo.data)){ 
+        geo.data <- geo.data[geo.data[filter][,1] %in% matrix(unlist(json$release_data$filters[i]))[,1],]
+      }
+      
+    }
+    
+  }
+  
+  # Removing NA rows.
+  geo.data <- geo.data[!is.na(geo.data$project_id),]
+  
+  return(geo.data)
+}
+
+
+
+
 
 ##### SECTION 3: DEFINING FUNCTIONS THAT OTHER FUNCTIONS USE #####
+
+# https://ryouready.wordpress.com/2010/01/11/progress-bars-in-r-part-ii-a-wrapper-for-apply-functions/
+lapply_pb <- function(X, FUN, ...)
+{
+  env <- environment()
+  pb_Total <- length(X)
+  counter <- 0
+  pb <- txtProgressBar(min = 0, max = pb_Total, style = 3)   
+  
+  # wrapper around FUN
+  wrapper <- function(...){
+    curVal <- get("counter", envir = env)
+    assign("counter", curVal +1 ,envir=env)
+    setTxtProgressBar(get("pb", envir=env), curVal +1)
+    FUN(...)
+  }
+  res <- lapply(X, wrapper, ...)
+  close(pb)
+  res
+}
 
 calcLambda <- function(param_set, maxLambda_denom, area){
   param_set[param_set!=0] <- 1
@@ -943,36 +1100,37 @@ paramCol <- function(i, aidData=aidData, roiData=roiData, probAidAssume=probAidA
   paramCol$prj <- 0
   
   if(PC_temp == 1){
-    paramCol$prj[paramCol[,roi.pc1.name] == subcounty_temp[,roi.pc1.name]] <- 1
+    paramCol$prj[paramCol[,roi.pc1.name] %in% subcounty_temp[,roi.pc1.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
   if(PC_temp == 2){
-    paramCol$prj[paramCol[,roi.pc2.name] == subcounty_temp[,roi.pc2.name]] <- 1
+    paramCol$prj[paramCol[,roi.pc2.name] %in% subcounty_temp[,roi.pc2.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
   if(PC_temp == 3){
-    paramCol$prj[paramCol[,roi.pc3.name] == subcounty_temp[,roi.pc3.name]] <- 1
+    paramCol$prj[paramCol[,roi.pc3.name] %in% subcounty_temp[,roi.pc3.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
   if(PC_temp == 4){
-    paramCol$prj[paramCol[,roi.pc4.name] == subcounty_temp[,roi.pc4.name]] <- 1
+    paramCol$prj[paramCol[,roi.pc4.name] %in% subcounty_temp[,roi.pc4.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
   if((PC_temp == 6) | (PC_temp == 8)){
-    paramCol$prj[paramCol[,roi.pc6.name] == subcounty_temp[,roi.pc6.name]] <- 1
+    paramCol$prj[paramCol[,roi.pc6.name] %in% subcounty_temp[,roi.pc6.name]] <- 1
     paramCol$prj <- paramCol$prj * probAidAssume
     paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
   }
   
-  row.names(paramCol) <- paramCol[,roi.pc1.name]
+  #row.names(paramCol) <- paramCol[,roi.pc1.name]
+  row.names(paramCol) <- paste(1:length(paramCol[,roi.pc1.name]), paramCol[,roi.pc1.name])
   
   paramCol_return <- as.data.frame(paramCol$prj)
   row.names(paramCol_return) <- row.names(paramCol)
@@ -1157,9 +1315,6 @@ geoSimulateError <- function(probIncPC, aidData=aidData, roiData=roiData, probAi
   }
   
   
-  
-  
-  
   # Calculating paramSet
   param_set = paramSet(aidData=aidData, roiData=roiData, probAidAssume=probAidAssume, aid.precision.code=aid.precision.code, roi.pc1.name=roi.pc1.name, roi.pc2.name=roi.pc2.name, roi.pc3.name=roi.pc3.name, roi.pc4.name=roi.pc4.name, roi.pc5.name=roi.pc5.name, roi.pc6.name=roi.pc6.name, aid.pc1.centroid.name=aid.pc1.centroid.name)
   
@@ -1340,16 +1495,22 @@ bootIter <- function(i, geoSimulateError.results.df, geoSimulateError.results.df
   binSize_lb <- minLambda
   binSize_ub <- minLambda + binSize
   
-  numIter <- (maxLambda - minLambda) / binSize
-  for(i in 1:ceiling(numIter)){
+  numIter <- bins
+  #numIter <- (maxLambda - minLambda) / binSize
+  #for(i in 1:ceiling(numIter)){
+  for(i in 1:numIter){
     
     results.boot <- rbind(results.boot, geoSimulateError.results.df[(geoSimulateError.results.df$lambda >= binSize_lb) & (geoSimulateError.results.df$lambda <= binSize_ub),][1:number.from.bin,])
     results.boot.se <- rbind(results.boot.se, geoSimulateError.results.df.se[(geoSimulateError.results.df.se$lambda >= binSize_lb) & (geoSimulateError.results.df.se$lambda <= binSize_ub),][1:number.from.bin,])
     
     binSize_lb <- binSize_lb + binSize
-    binSize_ub <- binSize_ub + binSize 
+    binSize_ub <- binSize_ub + binSize
+    
+    if(i == (numIter - 1)){
+      binSize_ub <-  binSize_ub + 1
+    }
   }
-  
+    
   # Summarizing by Bins
   results.boot$bin <- rep(1:bins,each=number.from.bin)
   results.boot.se$bin <- rep(1:bins,each=number.from.bin)
@@ -1404,81 +1565,7 @@ bootIter <- function(i, geoSimulateError.results.df, geoSimulateError.results.df
               se.geoSIMEX.boot=se.geoSIMEX.boot))
 }
 
-bootIter2 <- function(i, geoSimulateError.results.df, geoSimulateError.results.df.se, average_lambda){
-  
-  geoSimulateError.results.df$rand <- runif(nrow(geoSimulateError.results.df))
-  geoSimulateError.results.df.se$rand <- geoSimulateError.results.df$rand
-  
-  geoSimulateError.results.df <- geoSimulateError.results.df[order(geoSimulateError.results.df$rand),] 
-  geoSimulateError.results.df.se <- geoSimulateError.results.df.se[order(geoSimulateError.results.df.se$rand),] 
-  
-  results.boot <- matrix(NA,nrow=0,ncol=ncol(geoSimulateError.results.df))
-  results.boot <- as.data.frame(results.boot)
-  
-  results.boot.se <- matrix(NA,nrow=0,ncol=ncol(geoSimulateError.results.df.se))
-  results.boot.se <- as.data.frame(results.boot.se)
-  
-  boot.coefs <- as.data.frame(matrix(NA, nrow=0, ncol=ncol(geoSimulateError.results.df)))
-  names(boot.coefs) <- names(geoSimulateError.results.df)
-  
-  boot.se <- as.data.frame(matrix(NA, nrow=0, ncol=ncol(geoSimulateError.results.df.se)))
-  names(boot.se) <- names(geoSimulateError.results.df.se)
-  
-  # Randomly Pulling from Results Matrix to Get Subsample for Bootstrapping 
-  for(b in names(table(geoSimulateError.results.df$bin_12))){
-    temp.df <- geoSimulateError.results.df[geoSimulateError.results.df$bin_12 == b,]
-    boot.coefs <- rbind(boot.coefs, temp.df[1,])
-  }
-  
-  for(b in names(table(geoSimulateError.results.df.se$bin_12))){
-    temp.df <- geoSimulateError.results.df.se[geoSimulateError.results.df.se$bin_12 == b,]
-    boot.se <- rbind(boot.se, temp.df[1,])
-  }
-  
-  # Extrapolating 
-  if(average_lambda){
-    numVars <- ncol(boot.coefs) - 8
-    coefs.geoSIMEX.boot <- matrix(NA, nrow=1, ncol=numVars)
-    for(i in 1:numVars){
-      coefs.geoSIMEX.boot[i] <- summary(lm(as.matrix(boot.coefs[i]) ~ lambda_1 + lambda_1_sq, data = boot.coefs))$coefficients[1]
-    }
-    coefs.geoSIMEX.boot <- as.data.frame(coefs.geoSIMEX.boot)
-    names(coefs.geoSIMEX.boot) <- head(names(boot.coefs), -8)
-    
-    numVars <- ncol(boot.se) - 8
-    se.geoSIMEX.boot <- matrix(NA, nrow=1, ncol=numVars)
-    for(i in 1:numVars){
-      se.geoSIMEX.boot[i] <- summary(lm(as.matrix(boot.se[i]) ~ lambda_1 + lambda_1_sq, data = boot.se))$coefficients[1]
-    }
-    se.geoSIMEX.boot <- as.data.frame(se.geoSIMEX.boot)
-    names(se.geoSIMEX.boot) <- head(names(boot.se), -8)
-    
-  } else {
-    numVars <- ncol(boot.coefs) - 8
-    coefs.geoSIMEX.boot <- matrix(NA, nrow=1, ncol=numVars)
-    for(i in 1:numVars){
-      coefs.geoSIMEX.boot[i] <- summary(lm(as.matrix(boot.coefs[i]) ~ lambda_1 + lambda_2 + lambda_1_sq + lambda_2_sq, data = boot.coefs))$coefficients[1]
-    }
-    coefs.geoSIMEX.boot <- as.data.frame(coefs.geoSIMEX.boot)
-    names(coefs.geoSIMEX.boot) <- head(names(boot.coefs), -8)
-    
-    numVars <- ncol(boot.se) - 8
-    se.geoSIMEX.boot <- matrix(NA, nrow=1, ncol=numVars)
-    for(i in 1:numVars){
-      se.geoSIMEX.boot[i] <- summary(lm(as.matrix(boot.se[i]) ~ lambda_1 + lambda_2 + lambda_1_sq + lambda_2_sq, data = boot.se))$coefficients[1]
-    }
-    se.geoSIMEX.boot <- as.data.frame(se.geoSIMEX.boot)
-    names(se.geoSIMEX.boot) <- head(names(boot.se), -8)
-  }
-  
-  return(list(coefs.geoSIMEX.boot=coefs.geoSIMEX.boot,
-              se.geoSIMEX.boot=se.geoSIMEX.boot))
-}
-
-
 # Model Averaging Change Probability 
-
-
 model_rand_prob <- function(j, param_set.bin=param_set.bin, aidData=aidData, roiData=roiData, aid.project.amount=aid.project.amount, model=model, geoSIMEXvariable=geoSIMEXvariable, binary=binary){
   
   # Update aid variable
@@ -1633,101 +1720,4 @@ realization_of_aid <- function(param_set, aid.project.amount){
   dollars_realization <- rowSums(paramDollars)
   return(dollars_realization)
 }
-
-##### SECTION 4: SUBSETTING AID DATA #####
-
-subset.aiddata <- function(json){
-    
-  #### Import Dataset
-  # Eventually all datasets will be imported into R, so can just use this.
-  #geo.data <- eval(parse(text=as.character(json$release_data[5])))
-  # https://github.com/chrisalbon/code_r/blob/master/download-and-unzip-data.r
-  # http://stackoverflow.com/questions/23899525/using-r-to-download-zipped-data-file-extract-and-import-csv  
-  # http://stackoverflow.com/questions/32647779/r-download-and-unzip-file-to-store-in-data-frame
-    
-  # For now, have all the datasets loaded on github; will pull from there. So get name and use for-loops   
-  geo.data.name <- json$release_data$dataset
-  
-  if(geo.data.name == "colombiaaims_geocodedresearchrelease_level1_v1_1_1"){
-    # geo.data <- COLUMBIA DATA
-  }
-  
-  if(geo.data.name == "ugandaaims_geocodedresearchrelease_level1_v1_4_1"){
-    geo.data <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/UgandaAMP_GeocodedResearchRelease_Level1_v1.3/data/level_1a.csv") 
-  }
-  
-  
-  # Merging GADM names to data  
-  geo.data$latitude[is.na(geo.data$latitude)] <- geo.data$latitude[!is.na(geo.data$latitude)][1]
-  geo.data$longitude[is.na(geo.data$longitude)] <- geo.data$longitude[!is.na(geo.data$longitude)][1]
-  
-  coordinates(geo.data) <- ~longitude+latitude
-  proj4string(geo.data) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
-  
-  #### Extracting GADM Data, that matches AidData 
-  gadm <- getData('GADM', country=toupper(substr(json$boundary$name,1,3)), level=as.numeric(substr(json$boundary$name,8,8)))
-  
-  aiddata.gadm.over <- over(geo.data, gadm)
-  
-  #### Adding ADM Names to Aid Dataset 
-  
-  adm.level <- as.numeric(substr(json$boundary$name,8,8))
-  
-  for(i in 0:adm.level){
-    
-    geo.data[[paste("NAME_",i,sep="")]] <- aiddata.gadm.over[,paste("NAME_",i,sep="")]
-    geo.data[[paste("ID_",i,sep="")]] <- aiddata.gadm.over[,paste("ID_",i,sep="")]
-  }
-
-  geo.data <- geo.data@data
-  
-  #### Subsetting by Filter
-  
-  # Number of filters to subset by
-  num.filters <- length(json$release_data$filters)
-  
-  for(i in 1:num.filters){
-    
-    filter <- names(json$release_data$filters)[i]
-    use.filter <- TRUE
-    
-    if( (filter == "donors") & (json$release_data$filters[i] == "All") ){
-      use.filter <- FALSE
-    }
-    
-    if(filter == "transaction_year"){
-        
-      # Loop through years, add "1" to keep.obs if meets condition to keep observation
-      keep.obs <- rep(0,length(geo.data$transactions_start_year))
-      for(year in matrix(unlist(json$release_data$filters[i]))[,1]){
-        keep.obs <- keep.obs + as.numeric((year >= geo.data$transactions_start_year) & (year <= geo.data$transactions_end_year))
-      }
-      
-      geo.data <- geo.data[keep.obs > 0,]
-      
-      use.filter <- FALSE
-    }
-    
-    
-    # Checking to ensure filter exists in dataset.
-    # If doesn't exist, skip.
-    # Filter name in JSON must match variable name in aid dataset
-    
-    if(use.filter){
-      
-      # Checking to make sure filter exists in dataset (if doesn't, skip). Filter name in JSON must match filter
-      if(filter %in% names(geo.data)){ 
-        geo.data <- geo.data[geo.data[filter][,1] %in% matrix(unlist(json$release_data$filters[i]))[,1],]
-      }
-      
-    }
-        
-  }
-  
-  # Removing NA rows.
-  geo.data <- geo.data[!is.na(geo.data$project_id),]
-  
-  return(geo.data)
-}
-
 
