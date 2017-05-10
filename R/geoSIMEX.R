@@ -874,7 +874,7 @@ prob_aid_ROI <- function(aidData, roiData, probAidAssume, aid.project.amount, ai
 #' @param aid.pc1.centroid.name character containing the name of the variable in the aidData dataset which contains names or IDs of a precision code 1 spatial area that the aid project falls within. "centroid.pc1.id" is the default name in datasets produced by AidData's data extraction tool
 #' @param aid.precision.code character containing the name of the variable in the aidData dataset which contains precision codes for each project. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
 #'  
-#' @examples 
+#' @example 
 #' library(devtools)
 #' install_github("itpir/geoSIMEX")
 #' set.seed(42)
