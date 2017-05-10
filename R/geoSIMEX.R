@@ -780,7 +780,7 @@ print.summary.modelAverageRandProb <- function(x, ...){
 #'  
 #' @note The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website].
 #' 
-#' @example 
+#' @examples 
 #' library(devtools)
 #' install_github("itpir/geoSIMEX")
 #' 
@@ -813,8 +813,8 @@ print.summary.modelAverageRandProb <- function(x, ...){
 #' aidData$trueSubcounty <- sample(size=numberProjects,x=c(1:N), prob=probAid_true, replace=TRUE)
 #' aidData$PC  <- sample(size=numberProjects, x=c(1,2,3,4,6), prob=runif(5), replace=TRUE)
 #' 
-#'##### Calculating Expected Aid #####
-#'subcountyData$expectedAid <- expected_aid_ROI(aidData=aidData, 
+#' ##### Calculating Expected Aid #####
+#' subcountyData$expectedAid <- expected_aid_ROI(aidData=aidData, 
 #'                                              aid.project.amount="aid", 
 #'                                              aid.precision.code="PC", 
 #'                                              aid.pc1.centroid.name="trueSubcounty",
@@ -874,7 +874,7 @@ prob_aid_ROI <- function(aidData, roiData, probAidAssume, aid.project.amount, ai
 #' @param aid.pc1.centroid.name character containing the name of the variable in the aidData dataset which contains names or IDs of a precision code 1 spatial area that the aid project falls within. "centroid.pc1.id" is the default name in datasets produced by AidData's data extraction tool
 #' @param aid.precision.code character containing the name of the variable in the aidData dataset which contains precision codes for each project. "pc1.id" is the default name in datasets produced by AidData's data extraction tool
 #'  
-#' @example 
+#' @examples 
 #' library(devtools)
 #' install_github("itpir/geoSIMEX")
 #' set.seed(42)

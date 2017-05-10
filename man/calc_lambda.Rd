@@ -36,7 +36,49 @@ calc_lambda(aidData, roiData, roi.area="area", aid.precision.code="precision.cod
 The function is built to work with data from AidData's data extration tool. The extraction tool can be accessed here: [provide website].
 }
 \examples{
-lambda.naive <- calc_lambda(aidData=aidData.sub@data, roiData=roiData)
+library(devtools)
+install_github("itpir/geoSIMEX")
+set.seed(42)
+
+##### Generating Country-Level Dataset #####
+numSubcounties <- 120
+numSubcountyInCounty <- 2 
+numCountyInDistrict <- 3
+numDistrictInRegion <- 2
+
+N <- numSubcounties
+subcounty <- 1:N
+county <- rep(1:(N/numSubcountyInCounty), each=numSubcountyInCounty)
+district <- rep(1:(N/(numSubcountyInCounty*numCountyInDistrict)), each=(numSubcountyInCounty*numCountyInDistrict))
+region <- rep(1:(N/(numSubcountyInCounty*numCountyInDistrict*numDistrictInRegion)), each=(numSubcountyInCounty*numCountyInDistrict*numDistrictInRegion))
+country <- 1
+
+subcountyArea <- runif(N)
+probAid_assumed <- runif(N)
+
+subcountyData <- as.data.frame(cbind(subcounty,county,district,region,country,probAid_assumed,subcountyArea))
+
+##### Creating Aid Dataset #####
+numberProjects = 50
+aidData <- as.data.frame(matrix(NA,nrow=numberProjects,ncol=3))
+names(aidData) <- c("aid","trueSubcounty","PC")
+aidData$aid <- runif(nrow(aidData)) * 100
+probAid_true <- runif(N)
+aidData$trueSubcounty <- sample(size=numberProjects,x=c(1:N), prob=probAid_true, replace=TRUE)
+aidData$PC  <- sample(size=numberProjects, x=c(1,2,3,4,6), prob=runif(5), replace=TRUE)
+
+lambda <- calc_lambda(aidData=aidData, 
+                     roiData=subcountyData, 
+                     roi.area="subcountyArea", 
+                     aid.precision.code="PC", 
+                     roi.pc1.name="subcounty", 
+                     roi.pc2.name="county", 
+                     roi.pc3.name="district", 
+                     roi.pc4.name="region", 
+                     roi.pc5.name="region", 
+                     roi.pc6.name="country", 
+                     aid.pc1.centroid.name="trueSubcounty")
+lambda
 
 }
 \author{

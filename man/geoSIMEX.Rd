@@ -14,21 +14,21 @@ parallel=TRUE, mc.cores=2)
 \arguments{
 \item{model}{the naive model}
 
-\item{SIMEXvariable}{character containing the name of the variable with spatial uncertainty}
-
-\item{roiData}{name of dataframe of ROI data}
+\item{geoSIMEXvariable}{character containing the name of the variable with spatial uncertainty}
 
 \item{aidData}{name of dataframe of aid project data}
 
 \item{aid.project.amount}{character containing the name of the variable in the aidData dataset which contains aid amounts (e.g., commitment, disbursement). Set value to 1 if interested in number of aid projects rather than dollars.}
 
-\item{iterations}{number of simulated error iterations}
+\item{aid.pc1.centroid.name}{character containing the name of the variable in the aidData dataset which contains names or IDs of a precision code 1 spatial area that the aid project falls within. "centroid.pc1.id" is the default name in datasets produced by AidData's data extraction tool}
 
-\item{bins}{number of bins to group coefficients}
+\item{aid.precision.code}{character containing the name of the variable in the aidData dataset which contains precision codes for each project. "pc1.id" is the default name in datasets produced by AidData's data extraction tool}
 
-\item{fitting.method}{fitting method for the extrapolation. linear and quadratic are implemented.}
+\item{roiData}{name of dataframe of ROI data}
 
 \item{roi.area}{character containing the name of the variable in the ROI dataset which contains areas of ROIs. "area" is the default name in datasets produced by AidData's data extraction tool}
+
+\item{roi.prob.aid}{character containing the name of the variable in the ROI dataset which contains the probability of an ROI receiving aid.}
 
 \item{roi.pc1.name}{character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 1 spatial area that each ROI falls within. "pc1.id" is the default name in datasets produced by AidData's data extraction tool}
 
@@ -40,11 +40,11 @@ parallel=TRUE, mc.cores=2)
 
 \item{roi.pc6.name}{character containing the name of the variable in the ROI dataset which contains names or IDs of the precision code 6 and 8 spatial area that each ROI falls within. "pc6.id" is the default name in datasets produced by AidData's data extraction tool}
 
-\item{aid.pc1.centroid.name}{character containing the name of the variable in the aidData dataset which contains names or IDs of a precision code 1 spatial area that the aid project falls within. "centroid.pc1.id" is the default name in datasets produced by AidData's data extraction tool}
+\item{iterations}{number of simulated error iterations}
 
-\item{aid.precision.code}{character containing the name of the variable in the aidData dataset which contains precision codes for each project. "pc1.id" is the default name in datasets produced by AidData's data extraction tool}
+\item{bins}{number of bins to group coefficients}
 
-\item{parallel}{parallelize iterations}
+\item{fitting.method}{fitting method for the extrapolation. linear and quadratic are implemented.}
 
 \item{mc.cores}{number of cores to use for parallelization}
 }
