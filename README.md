@@ -7,68 +7,94 @@ A package designed to incorporate spatial imprecision into regression analysis. 
 
 ## Installation
 ```r
-source("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX/R/geoSIMEX.R")
-
+library(devtools)
+install_github("itpir/geoSIMEX")
 ```
 
 ## Usage
 
 ```r
-##### * Load Data * #####
-# ADM Level Data
-uga.adm <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/merge_uga_adm3.csv")
+##### Generating Country-Level Dataset #####
+numSubcounties <- 120
+numSubcountyInCounty <- 2 
+numCountyInDistrict <- 3
+numDistrictInRegion <- 2
 
-# Aid Project Level Data
-uga.aiddata <- read.csv("https://raw.githubusercontent.com/ramarty/geoSIMEX/master/Example/uga_aiddata_gadm.csv")
+N <- numSubcounties
+subcounty <- 1:N
+county <- rep(1:(N/numSubcountyInCounty), each=numSubcountyInCounty)
+district <- rep(1:(N/(numSubcountyInCounty*numCountyInDistrict)), each=(numSubcountyInCounty*numCountyInDistrict))
+region <- rep(1:(N/(numSubcountyInCounty*numCountyInDistrict*numDistrictInRegion)), each=(numSubcountyInCounty*numCountyInDistrict*numDistrictInRegion))
+country <- 1
 
-##### * Subsetting Aid Data * #####
-uga.aiddata <- uga.aiddata[uga.aiddata$ad_sector_names == "Government and civil society, general",]
-uga.aiddata <- uga.aiddata[uga.aiddata$transactions_start_year <= 2010,] 
+subcountyArea <- runif(N)
+probAid_assumed <- runif(N)
 
+subcountyData <- as.data.frame(cbind(subcounty,county,district,region,country,probAid_assumed,subcountyArea))
 
-##### Calculating Expected Amount of Aid in Each ADM #####
-uga.adm$expected_aid <- expected_aid_ROI(aidData=uga.aiddata, 
-                                         roiData=uga.adm, 
-                                         roi.prob.aid="area", 
-                                         aid.project.amount="total_commitments", 
-                                         aid.precision.code="precision_code", 
-                                         roi.pc1.name="NAME_3.id", 
-                                         roi.pc2.name="NAME_2.id", 
-                                         roi.pc3.name="NAME_1.id", 
-                                         roi.pc4.name="NAME_1.id", 
-                                         roi.pc5.name="NAME_1.id", 
-                                         roi.pc6.name="NAME_0.id", 
-                                         aid.pc1.centroid.name="NAME_3.id")
+##### Creating Aid Dataset #####
+numberProjects = 50
+aidData <- as.data.frame(matrix(NA,nrow=numberProjects,ncol=3))
+names(aidData) <- c("aid","trueSubcounty","PC")
+aidData$aid <- runif(nrow(aidData)) * 100
+probAid_true <- runif(N)
+aidData$trueSubcounty <- sample(size=numberProjects,x=c(1:N), prob=probAid_true, replace=TRUE)
+aidData$PC  <- sample(size=numberProjects, x=c(1,2,3,4,6), prob=runif(5), replace=TRUE)
 
-##### Run Naive Model #####
-naive_model <- lm(ncc4_2010e ~ expected_aid + gpw3_2000e, data=uga.adm)
+# True Aid
+aidData$PC.1s <- 1
+subcountyData$trueAid <- expected_aid_ROI(aidData=aidData, 
+                                         roiData=subcountyData, 
+                                         roi.prob.aid="probAid_assumed", 
+                                         aid.project.amount="aid", 
+                                         aid.precision.code="PC.1s", 
+                                         roi.pc1.name="subcounty", 
+                                         roi.pc2.name="county", 
+                                         roi.pc3.name="district", 
+                                         roi.pc4.name="region", 
+                                         roi.pc5.name="region", 
+                                         roi.pc6.name="country", 
+                                         aid.pc1.centroid.name="trueSubcounty")
 
-# View Results
-summary(naive_model)
+# Wealth - 1 to 1 relation with aid
+subcountyData$wealth <- subcountyData$trueAid + runif(nrow(subcountyData))
 
-##### Run geoSIMEX Model #####
+# Expected Value Aid 
+subcountyData$expectedAid <- expected_aid_ROI(aidData=aidData, 
+                                             aid.project.amount="aid", 
+                                             aid.precision.code="PC", 
+                                             aid.pc1.centroid.name="trueSubcounty",
+                                             roiData=subcountyData, 
+                                             roi.prob.aid="probAid_assumed", 
+                                             roi.pc1.name="subcounty", 
+                                             roi.pc2.name="county", 
+                                             roi.pc3.name="district", 
+                                             roi.pc4.name="region", 
+                                             roi.pc5.name="region", 
+                                             roi.pc6.name="country")
+
+naive_model <- lm(wealth ~ expectedAid, data=subcountyData)
+
 geoSIMEX_model <- geoSIMEX(model = naive_model, 
-                           geoSIMEXvariable = "expected_aid", 
-                           roiData = uga.adm, 
-                           aidData = uga.aiddata, 
-                           aid.project.amount = "total_commitments",
-                           iterations = 400,
-                           bins=4,
-                           roi.area = "area", 
-                           roi.prob.aid = "area", 
-                           roi.pc1.name="NAME_3.id", 
-                           roi.pc2.name="NAME_2.id", 
-                           roi.pc3.name="NAME_1.id", 
-                           roi.pc4.name="NAME_1.id", 
-                           roi.pc5.name="NAME_1.id", 
-                           roi.pc6.name="NAME_0.id", 
-                           aid.pc1.centroid.name="NAME_3.id", 
-                           aid.precision.code="precision_code")
+                          geoSIMEXvariable = "expectedAid", 
+                          aidData = aidData, 
+                          aid.project.amount = "aid",
+                          aid.pc1.centroid.name="trueSubcounty", 
+                          aid.precision.code="PC",
+                          roiData = subcountyData, 
+                          roi.area = "subcountyArea", 
+                          roi.prob.aid = "probAid_assumed", 
+                          roi.pc1.name="subcounty", 
+                          roi.pc2.name="county", 
+                          roi.pc3.name="district", 
+                          roi.pc4.name="region", 
+                          roi.pc5.name="region", 
+                          roi.pc6.name="country")
 
-# View Results
+##### Analyzing Results #####
+summary(naive_model)
 summary(geoSIMEX_model)
-plot(geoSIMEX_model, variable = "expected_aid")
-
+plot(geoSIMEX_model, variable="expectedAid")
 ```
 
 ## License
