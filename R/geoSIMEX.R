@@ -511,6 +511,7 @@ print.summary.geoSIMEX <- function(x, ...){
   printCoefmat(x$coefficients, P.value=TRUE, has.Pvalue=TRUE)
 }
 
+#' @export
 plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=TRUE, includeTitle=TRUE, name_variable="", ylim="default"){
   
   #name_variable = variable
