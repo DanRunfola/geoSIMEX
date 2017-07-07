@@ -11,3 +11,4 @@ LazyLoad: yes
 URL: https://github.com/itpir/geoSIMEX
 BugReports: https://github.com/itpir/geoSIMEX/issues
 RoxygenNote: 6.0.1.9000
+Suggests: testthat

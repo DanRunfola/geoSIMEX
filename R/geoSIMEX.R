@@ -1,8 +1,11 @@
 ##### SECTION 1: GEOSIMEX SIMULATION FUNCTION #####
-#setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX")
+setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX")
 #roxygen2::roxygenise()
 #devtools::document()
 
+# devtools::missing_s3()
+# http://r-pkgs.had.co.nz/namespace.html
+# https://stackoverflow.com/questions/31988875/creating-an-rpackage-usemethod-cant-find-function
 # https://hilaryparker.com/2014/04/29/writing-an-r-package-from-scratch/
 # document()
 
@@ -665,8 +668,10 @@ modelAverageRandProb_est <- function(iterations,
               residuals = model$residuals))
 }
 
+#' @export
 modelAverageRandProb <- function(x, ...) UseMethod("modelAverageRandProb")
 
+#' @export
 modelAverageRandProb.default <- function(iterations=500, 
                                          model,
                                          geoSIMEXvariable,
