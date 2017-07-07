@@ -1,5 +1,5 @@
 ##### SECTION 1: GEOSIMEX SIMULATION FUNCTION #####
-# setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX")
+#setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX")
 #roxygen2::roxygenise()
 #devtools::document()
 
@@ -405,6 +405,7 @@ geoSIMEX_est <- function(model,
 #' plot(geoSIMEX_model, variable="expectedAid")
 geoSIMEX <- function(x, ...) UseMethod("geoSIMEX")
 
+#' @export
 geoSIMEX.default <- function(model, 
                              geoSIMEXvariable, 
                              roiData, 
