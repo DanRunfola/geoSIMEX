@@ -468,6 +468,7 @@ geoSIMEX.default <- function(model,
   est
 }
 
+#' @export
 print.geoSIMEX <- function(x, ...){
   cat("Naive Model:\n")
   print(x$call)
@@ -477,6 +478,7 @@ print.geoSIMEX <- function(x, ...){
   print(x$coefficients, row.names=FALSE)  
 }
 
+#' @export
 summary.geoSIMEX <- function(object, ...){
   
   Coef <- as.numeric(object$coefficients)
@@ -499,6 +501,7 @@ summary.geoSIMEX <- function(object, ...){
   res
 }
 
+#' @export
 print.summary.geoSIMEX <- function(x, ...){
   
   cat("Call:\n")
@@ -714,6 +717,7 @@ modelAverageRandProb.default <- function(iterations=500,
   est
 }
 
+#' @export
 print.modelAverageRandProb <- function(x, ...){
   cat("Naive Model:\n")
   print(x$call)
@@ -723,6 +727,7 @@ print.modelAverageRandProb <- function(x, ...){
   print(x$coefficients, row.names=FALSE)  
 }
 
+#' @export
 summary.modelAverageRandProb<- function(object, ...){
   
   Coef <- as.numeric(object$coefficients)
@@ -745,6 +750,7 @@ summary.modelAverageRandProb<- function(object, ...){
   res
 }
 
+#' @export
 print.summary.modelAverageRandProb <- function(x, ...){
   
   cat("Call:\n")
@@ -958,6 +964,7 @@ calc_lambda <- function(aidData,
   return(lambda)
 }
 
+#' @export
 subset.aiddata <- function(json){
   
   #### Import Dataset

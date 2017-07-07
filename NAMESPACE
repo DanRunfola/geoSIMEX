@@ -2,6 +2,13 @@
 
 S3method(geoSIMEX,default)
 S3method(modelAverageRandProb,default)
+S3method(print,geoSIMEX)
+S3method(print,modelAverageRandProb)
+S3method(print,summary.geoSIMEX)
+S3method(print,summary.modelAverageRandProb)
+S3method(subset,aiddata)
+S3method(summary,geoSIMEX)
+S3method(summary,modelAverageRandProb)
 export(calc_lambda)
 export(expected_aid_ROI)
 export(geoSIMEX)
