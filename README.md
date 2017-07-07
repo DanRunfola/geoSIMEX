@@ -9,6 +9,7 @@ A package designed to incorporate spatial imprecision into regression analysis. 
 ```r
 library(devtools)
 install_github("itpir/geoSIMEX")
+library(geoSIMEX)
 ```
 
 ## Usage
