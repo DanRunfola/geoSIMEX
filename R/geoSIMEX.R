@@ -1,5 +1,5 @@
 ##### SECTION 1: GEOSIMEX SIMULATION FUNCTION #####
-setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX")
+#setwd("~/Desktop/AidData/MeasureErrorsInEx/geoSIMEX/geoSIMEX")
 #roxygen2::roxygenise()
 #devtools::document()
 
