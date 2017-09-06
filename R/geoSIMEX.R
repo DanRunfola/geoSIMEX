@@ -1118,39 +1118,46 @@ paramCol <- function(i, aidData=aidData, roiData=roiData, probAidAssume=probAidA
   
   # Getting information about subcounty & region that the aid project falls in
   subcounty_temp <- roiData[roiData[,roi.pc1.name] == aidDataPrj_Temp[,aid.pc1.centroid.name],]
+  # IF THIS HAS NROW OF 0, SKIP MOST STUFF AND AND MAKE VECTOR OF ZEROS. NEEDED TO WORK W/ HH SURVEYS.
+  # DO WE WANT LAMBDA TO BE CALCULATED WITH THESE THOUGH??? CHECK HOW THIS MIGHT WORK... MAYBE, UP TO USER TO
+  # REMOVE THESE PROJECTS? OR CAN MAKE AS OPTION...
   
   # Making temporary dataset that will merge into
   paramCol <- roiData
   paramCol$prj <- 0
   
-  if(PC_temp == 1){
-    paramCol$prj[paramCol[,roi.pc1.name] %in% subcounty_temp[,roi.pc1.name]] <- 1
-    paramCol$prj <- paramCol$prj * probAidAssume
-    paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
-  }
+  if(nrow(subcounty_temp) > 0){
   
-  if(PC_temp == 2){
-    paramCol$prj[paramCol[,roi.pc2.name] %in% subcounty_temp[,roi.pc2.name]] <- 1
-    paramCol$prj <- paramCol$prj * probAidAssume
-    paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
-  }
-  
-  if(PC_temp == 3){
-    paramCol$prj[paramCol[,roi.pc3.name] %in% subcounty_temp[,roi.pc3.name]] <- 1
-    paramCol$prj <- paramCol$prj * probAidAssume
-    paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
-  }
-  
-  if(PC_temp == 4){
-    paramCol$prj[paramCol[,roi.pc4.name] %in% subcounty_temp[,roi.pc4.name]] <- 1
-    paramCol$prj <- paramCol$prj * probAidAssume
-    paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
-  }
-  
-  if((PC_temp == 6) | (PC_temp == 8)){
-    paramCol$prj[paramCol[,roi.pc6.name] %in% subcounty_temp[,roi.pc6.name]] <- 1
-    paramCol$prj <- paramCol$prj * probAidAssume
-    paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
+    if(PC_temp == 1){
+      paramCol$prj[paramCol[,roi.pc1.name] %in% subcounty_temp[,roi.pc1.name]] <- 1
+      paramCol$prj <- paramCol$prj * probAidAssume
+      paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
+    }
+    
+    if(PC_temp == 2){
+      paramCol$prj[paramCol[,roi.pc2.name] %in% subcounty_temp[,roi.pc2.name]] <- 1
+      paramCol$prj <- paramCol$prj * probAidAssume
+      paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
+    }
+    
+    if(PC_temp == 3){
+      paramCol$prj[paramCol[,roi.pc3.name] %in% subcounty_temp[,roi.pc3.name]] <- 1
+      paramCol$prj <- paramCol$prj * probAidAssume
+      paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
+    }
+    
+    if(PC_temp == 4){
+      paramCol$prj[paramCol[,roi.pc4.name] %in% subcounty_temp[,roi.pc4.name]] <- 1
+      paramCol$prj <- paramCol$prj * probAidAssume
+      paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
+    }
+    
+    if((PC_temp == 6) | (PC_temp == 8)){
+      paramCol$prj[paramCol[,roi.pc6.name] %in% subcounty_temp[,roi.pc6.name]] <- 1
+      paramCol$prj <- paramCol$prj * probAidAssume
+      paramCol$prj <- paramCol$prj / sum(paramCol$prj)  
+    }
+    
   }
   
   #row.names(paramCol) <- paramCol[,roi.pc1.name]
