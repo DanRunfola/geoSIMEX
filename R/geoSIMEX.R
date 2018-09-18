@@ -998,10 +998,10 @@ subset.aiddata <- function(json){
   
   file.path <- paste("https://github.com/AidData-WM/public_datasets/blob/master/geocoded/",github.dataset.name.zip,"?raw=TRUE",sep="")
   
-  download.file(file.path, destfile=github.dataset.name.zip)
+  download.file(file.path, destfile=file.path(getwd(), github.dataset.name.zip))
   unzip(github.dataset.name.zip, exdir=".")
   
-  geo.data <- read.csv(paste(github.dataset.name,"/data/level_1a.csv",sep=""))
+  geo.data <- read.csv(file.path(getwd(), github.dataset.name,"/data/level_1a.csv"))
   
   # Merging GADM names to data  
   geo.data$latitude[is.na(geo.data$latitude)] <- geo.data$latitude[!is.na(geo.data$latitude)][1]
@@ -1075,10 +1075,6 @@ subset.aiddata <- function(json){
   
   return(geo.data)
 }
-
-
-
-
 
 ##### SECTION 3: DEFINING FUNCTIONS THAT OTHER FUNCTIONS USE #####
 
