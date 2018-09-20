@@ -156,8 +156,8 @@ geoSIMEX_est <- function(model,
   # Putting Into Bins
   extrapolatedMean.df <- as.data.frame(matrix(NA, nrow=0, ncol=ncol(geoSimulateError.results.df)))
   
-  minLambda <- min(geoSimulateError.results.df$lambda)
-  maxLambda <- max(geoSimulateError.results.df$lambda)
+  minLambda <- min(geoSimulateError.results.df$lambda, na.rm=T)
+  maxLambda <- max(geoSimulateError.results.df$lambda, na.rm=T)
   
   binSize <- (maxLambda - minLambda) / bins
   
@@ -557,7 +557,7 @@ plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=TRUE, includ
 
   
   # Plot Mean Lambda Values
-  ylim==c(NA,NA)
+  #ylim==c(NA,NA)
   
 
   
@@ -568,7 +568,7 @@ plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=TRUE, includ
          ylab = paste(variable_name, " coefficient", sep=""),
          main = title,
          xlim = c(0,1),
-         ylim = c(min(var.vales.all), max(var.vales.all)),
+         ylim = c(min(var.vales.all, na.rm=T), max(var.vales.all, na.rm=T)),
          pch  = 16,
          col="red")
     
@@ -596,10 +596,10 @@ plot.geoSIMEX <- function(x, variable, confInt = 95, allSimulations=TRUE, includ
   lambda <- x$valuesMean$lambda
   fit <- lm(var ~ lambda + I(lambda^2))
   
-  newdat_sim = data.frame(lambda = seq(min(lambda), max(lambda), length.out = 100))
+  newdat_sim = data.frame(lambda = seq(min(lambda, na.rm=T), max(lambda, na.rm=T), length.out = 100))
   newdat_sim$pred = predict(fit, newdata = newdat_sim)
   
-  newdat_extrp = data.frame(lambda = seq(0, min(lambda), length.out = 100))
+  newdat_extrp = data.frame(lambda = seq(0, min(lambda, na.rm=T), length.out = 100))
   newdat_extrp$pred = predict(fit, newdata = newdat_extrp)
   
   # Plotting Lines
@@ -1514,8 +1514,8 @@ bootIter <- function(i, geoSimulateError.results.df, geoSimulateError.results.df
   names(boot.se) <- head(names(geoSimulateError.results.df.se), -3)
   
   # Randomly Pulling from Results Matrix to Get Subsample for Bootstrapping 
-  minLambda <- min(geoSimulateError.results.df$lambda)
-  maxLambda <- max(geoSimulateError.results.df$lambda)
+  minLambda <- min(geoSimulateError.results.df$lambda, na.rm=T)
+  maxLambda <- max(geoSimulateError.results.df$lambda, na.rm=T)
   
   binSize <- (maxLambda - minLambda) / bins
   
